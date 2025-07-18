@@ -92,9 +92,12 @@ export const projectsApi = {
   async createFromUrl(siteUrl: string): Promise<ApiResponse<Project>> {
     try {
       // First, parse the site
-      const parseResponse = await fetch('/api/sites/parse', {
+      const parseResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sites-parse`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
         body: JSON.stringify({ url: siteUrl })
       });
 
@@ -293,9 +296,12 @@ export const aiApi = {
       }
 
       // Call AI API
-      const response = await fetch('/api/ai/suggestions', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-suggestions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
         body: JSON.stringify({ 
           projectId,
           components: componentsResponse.data 

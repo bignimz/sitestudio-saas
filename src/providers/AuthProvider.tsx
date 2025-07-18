@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { AuthContext } from "./auth-context";
+import type { User, Session } from "@supabase/supabase-js";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Check, Zap, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../lib/api";
+import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
 
 const Pricing = () => {
@@ -61,10 +62,11 @@ const Pricing = () => {
       }
 
       // Create Stripe checkout session
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
           priceId,
