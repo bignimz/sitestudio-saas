@@ -3,11 +3,13 @@ import Home from "./pages/Home";
 import { Login } from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Editor from "./pages/Editor";
+import Pricing from "./pages/Pricing";
 import { AuthGuard } from "./components/AuthGuard";
 
 const router = createBrowserRouter([
   { path: "/", element: <Home /> },
   { path: "/login", element: <Login /> },
+  { path: "/pricing", element: <Pricing /> },
   {
     path: "/dashboard",
     element: (
