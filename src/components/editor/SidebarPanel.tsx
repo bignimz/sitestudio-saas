@@ -9,11 +9,7 @@ interface SidebarPanelProps {
   onReorderComponents: (components: Component[]) => void;
 }
 
-export default function SidebarPanel({ 
-  onAddComponent, 
-  components, 
-  onReorderComponents 
-}: SidebarPanelProps) {
+export default function SidebarPanel({ onAddComponent, components, onReorderComponents }: SidebarPanelProps) {
   const componentTypes = [
     { type: "hero", label: "Hero Section", icon: Layout, color: "bg-purple-100 text-purple-700" },
     { type: "navbar", label: "Navigation", icon: Navigation, color: "bg-blue-100 text-blue-700" },
@@ -65,9 +61,9 @@ export default function SidebarPanel({
             {components
               .sort((a, b) => a.position - b.position)
               .map((component, index) => {
-                const componentType = componentTypes.find(t => t.type === component.component_type);
+                const componentType = componentTypes.find((t) => t.type === component.component_type);
                 const IconComponent = componentType?.icon || Layout;
-                
+
                 return (
                   <motion.div
                     key={component.id}
@@ -75,23 +71,21 @@ export default function SidebarPanel({
                     animate={{ opacity: 1, y: 0 }}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
                   >
-                    <div className={`p-1.5 rounded ${componentType?.color || 'bg-gray-100 text-gray-700'}`}>
+                    <div className={`p-1.5 rounded ${componentType?.color || "bg-gray-100 text-gray-700"}`}>
                       <IconComponent size={14} />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate">
                         {componentType?.label || component.component_type}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        Position {component.position + 1}
-                      </div>
+                      <div className="text-xs text-gray-500">Position {component.position + 1}</div>
                     </div>
-                    
+
                     <div className="flex items-center gap-1">
-                      <span className={`w-2 h-2 rounded-full ${
-                        component.is_visible ? 'bg-green-400' : 'bg-gray-400'
-                      }`} />
+                      <span
+                        className={`w-2 h-2 rounded-full ${component.is_visible ? "bg-green-400" : "bg-gray-400"}`}
+                      />
                     </div>
                   </motion.div>
                 );

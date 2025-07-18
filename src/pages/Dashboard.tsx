@@ -44,12 +44,12 @@ const Dashboard = () => {
         toast.error(response.error);
         return;
       }
-      
+
       toast.success("Project created successfully!");
       setShowCreateForm(false);
       setSiteUrl("");
       loadProjects();
-      
+
       // Navigate to editor
       if (response.data) {
         navigate(`/editor/${response.data.id}`);
@@ -63,14 +63,14 @@ const Dashboard = () => {
 
   const handleDeleteProject = async (projectId: string) => {
     if (!confirm("Are you sure you want to delete this project?")) return;
-    
+
     try {
       const response = await projectsApi.deleteProject(projectId);
       if (response.error) {
         toast.error("Failed to delete project");
         return;
       }
-      
+
       toast.success("Project deleted successfully");
       loadProjects();
     } catch (error) {
@@ -99,10 +99,7 @@ const Dashboard = () => {
           <Link to="/pricing" className="block text-gray-700 hover:text-blue-500">
             Upgrade
           </Link>
-          <button 
-            onClick={handleLogout}
-            className="block text-gray-700 hover:text-blue-500 text-left"
-          >
+          <button onClick={handleLogout} className="block text-gray-700 hover:text-blue-500 text-left">
             Logout
           </button>
         </nav>
@@ -194,12 +191,8 @@ const Dashboard = () => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {project.title}
-                    </h3>
-                    {project.description && (
-                      <p className="text-sm text-gray-600 mb-2">{project.description}</p>
-                    )}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{project.title}</h3>
+                    {project.description && <p className="text-sm text-gray-600 mb-2">{project.description}</p>}
                     {project.site_url && (
                       <div className="flex items-center gap-1 text-sm text-gray-500">
                         <Globe size={14} />
@@ -210,9 +203,7 @@ const Dashboard = () => {
                   <div className="flex items-center gap-2">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
-                        project.is_published
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
+                        project.is_published ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       {project.is_published ? "Published" : "Draft"}

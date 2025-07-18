@@ -30,7 +30,7 @@ export default function Editor() {
       // Load project and components in parallel
       const [projectResponse, componentsResponse] = await Promise.all([
         projectsApi.getProject(projectId),
-        componentsApi.getComponents(projectId)
+        componentsApi.getComponents(projectId),
       ]);
 
       if (projectResponse.error) {
@@ -62,7 +62,7 @@ export default function Editor() {
       component_type: type as any,
       content: getDefaultContent(type),
       position: components.length,
-      is_visible: true
+      is_visible: true,
     };
 
     try {
@@ -73,7 +73,7 @@ export default function Editor() {
       }
 
       if (response.data) {
-        setComponents(prev => [...prev, response.data!]);
+        setComponents((prev) => [...prev, response.data!]);
         toast.success("Component added successfully");
       }
     } catch (error) {
@@ -89,13 +89,7 @@ export default function Editor() {
         return;
       }
 
-      setComponents(prev => 
-        prev.map(comp => 
-          comp.id === componentId 
-            ? { ...comp, ...updates }
-            : comp
-        )
-      );
+      setComponents((prev) => prev.map((comp) => (comp.id === componentId ? { ...comp, ...updates } : comp)));
     } catch (error) {
       toast.error("Failed to update component");
     }
@@ -109,7 +103,7 @@ export default function Editor() {
         return;
       }
 
-      setComponents(prev => prev.filter(comp => comp.id !== componentId));
+      setComponents((prev) => prev.filter((comp) => comp.id !== componentId));
       toast.success("Component deleted");
     } catch (error) {
       toast.error("Failed to delete component");
@@ -118,13 +112,13 @@ export default function Editor() {
 
   const handleReorderComponents = async (reorderedComponents: Component[]) => {
     setComponents(reorderedComponents);
-    
+
     try {
       const updates = reorderedComponents.map((comp, index) => ({
         id: comp.id,
-        position: index
+        position: index,
       }));
-      
+
       await componentsApi.reorderComponents(updates);
     } catch (error) {
       toast.error("Failed to save component order");
@@ -167,47 +161,47 @@ export default function Editor() {
 
   const getDefaultContent = (type: string) => {
     switch (type) {
-      case 'text':
-        return { text: 'New text content', fontSize: '16px', color: '#000000' };
-      case 'image':
-        return { url: 'https://via.placeholder.com/400x300', alt: 'Placeholder image' };
-      case 'hero':
-        return { 
-          title: 'Hero Title', 
-          subtitle: 'Hero subtitle goes here',
-          backgroundColor: '#f8fafc',
-          ctaText: 'Get Started',
-          ctaUrl: '#'
-        };
-      case 'cta':
-        return { 
-          text: 'Call to Action',
-          url: '#',
-          backgroundColor: '#3b82f6',
-          textColor: '#ffffff'
-        };
-      case 'section':
-        return { 
-          title: 'Section Title',
-          text: 'Section content goes here',
-          backgroundColor: '#ffffff'
-        };
-      case 'navbar':
+      case "text":
+        return { text: "New text content", fontSize: "16px", color: "#000000" };
+      case "image":
+        return { url: "https://via.placeholder.com/400x300", alt: "Placeholder image" };
+      case "hero":
         return {
-          logoText: project?.title || 'Logo',
+          title: "Hero Title",
+          subtitle: "Hero subtitle goes here",
+          backgroundColor: "#f8fafc",
+          ctaText: "Get Started",
+          ctaUrl: "#",
+        };
+      case "cta":
+        return {
+          text: "Call to Action",
+          url: "#",
+          backgroundColor: "#3b82f6",
+          textColor: "#ffffff",
+        };
+      case "section":
+        return {
+          title: "Section Title",
+          text: "Section content goes here",
+          backgroundColor: "#ffffff",
+        };
+      case "navbar":
+        return {
+          logoText: project?.title || "Logo",
           links: [
-            { text: 'Home', url: '#' },
-            { text: 'About', url: '#about' },
-            { text: 'Contact', url: '#contact' }
+            { text: "Home", url: "#" },
+            { text: "About", url: "#about" },
+            { text: "Contact", url: "#contact" },
           ],
-          backgroundColor: '#ffffff',
-          textColor: '#000000'
+          backgroundColor: "#ffffff",
+          textColor: "#000000",
         };
-      case 'footer':
+      case "footer":
         return {
-          copyright: `© ${new Date().getFullYear()} ${project?.title || 'Website'}`,
-          backgroundColor: '#f8fafc',
-          textColor: '#64748b'
+          copyright: `© ${new Date().getFullYear()} ${project?.title || "Website"}`,
+          backgroundColor: "#f8fafc",
+          textColor: "#64748b",
         };
       default:
         return {};
@@ -227,10 +221,7 @@ export default function Editor() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Project not found</h2>
-          <button 
-            onClick={() => navigate("/dashboard")}
-            className="text-blue-600 hover:text-blue-700"
-          >
+          <button onClick={() => navigate("/dashboard")} className="text-blue-600 hover:text-blue-700">
             Return to Dashboard
           </button>
         </div>
@@ -244,7 +235,7 @@ export default function Editor() {
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-6 py-3 z-50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => navigate("/dashboard")}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
@@ -256,7 +247,7 @@ export default function Editor() {
               <p className="text-sm text-gray-500">Visual Editor</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -268,7 +259,7 @@ export default function Editor() {
               <Sparkles size={16} />
               {gettingSuggestions ? "Getting..." : "AI Suggestions"}
             </motion.button>
-            
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -279,7 +270,7 @@ export default function Editor() {
               <Save size={16} />
               {saving ? "Saving..." : "Save"}
             </motion.button>
-            
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -294,12 +285,12 @@ export default function Editor() {
 
       {/* Main Editor */}
       <div className="flex pt-16 w-full">
-        <SidebarPanel 
+        <SidebarPanel
           onAddComponent={handleAddComponent}
           components={components}
           onReorderComponents={handleReorderComponents}
         />
-        <EditorCanvas 
+        <EditorCanvas
           components={components}
           onUpdateComponent={handleUpdateComponent}
           onDeleteComponent={handleDeleteComponent}
