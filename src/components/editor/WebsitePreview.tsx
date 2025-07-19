@@ -342,24 +342,24 @@ export default function WebsitePreview({
                 </div>
               )}
             </div>
-                      ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <div className="text-center max-w-md p-6">
-                  <Monitor className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Website Preview</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Your website will appear here for visual editing. Due to CORS restrictions, 
-                    some websites may not load in the preview.
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500">
+              <div className="text-center max-w-md p-6">
+                <Monitor className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Website Preview</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Your website will appear here for visual editing. Due to CORS restrictions, 
+                  some websites may not load in the preview.
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                  <h4 className="font-medium text-blue-900 mb-2">Demo Mode Active</h4>
+                  <p className="text-xs text-blue-700">
+                    We've created sample components from your website that you can edit using the sidebar and properties panel.
                   </p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                    <h4 className="font-medium text-blue-900 mb-2">Demo Mode Active</h4>
-                    <p className="text-xs text-blue-700">
-                      We've created sample components from your website that you can edit using the sidebar and properties panel.
-                    </p>
-                  </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
         </motion.div>
       </div>
 
