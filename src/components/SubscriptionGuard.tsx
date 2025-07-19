@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../providers/AuthProvider";
+import { useAuth } from "../providers/use-auth";
 
 export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   const { subscription, isLoading } = useAuth();

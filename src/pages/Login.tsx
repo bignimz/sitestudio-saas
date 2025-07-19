@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
-import { useAuth } from "../providers/AuthProvider";
+import { useAuth } from "../providers/use-auth";
 
 export function Login() {
   const [credentials, setCredentials] = useState({
