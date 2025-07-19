@@ -5,8 +5,32 @@ import { Save, Eye, ArrowLeft, Sparkles } from "lucide-react";
 import EditorCanvas from "../components/editor/EditorCanvas";
 import SidebarPanel from "../components/editor/SidebarPanel";
 import { projectsApi, componentsApi, aiApi } from "../lib/api";
-import { Component, Project } from "../types/database";
 import { toast } from "sonner";
+
+// Temporary inline types
+interface Project {
+  id: string;
+  user_id: string;
+  site_url?: string;
+  title: string;
+  description?: string;
+  is_published: boolean;
+  published_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Component {
+  id: string;
+  project_id: string;
+  component_type: string;
+  content: Record<string, any>;
+  position: number;
+  styles?: Record<string, any>;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function Editor() {
   const { projectId } = useParams<{ projectId: string }>();

@@ -1,7 +1,18 @@
 import React from "react";
 import { useDrop } from "react-dnd";
 import ComponentBlock from "./ComponentBlock";
-import { Component } from "../../types/database";
+
+interface Component {
+  id: string;
+  project_id: string;
+  component_type: string;
+  content: Record<string, any>;
+  position: number;
+  styles?: Record<string, any>;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 interface EditorCanvasProps {
   components: Component[];
