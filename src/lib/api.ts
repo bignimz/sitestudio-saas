@@ -1,10 +1,9 @@
 import { supabase } from './supabase';
-import { 
+import type { 
   Project, 
   Component, 
   User, 
   Subscription, 
-  AISuggestion, 
   ApiResponse, 
   PaginatedResponse,
   ParsedSiteData,
@@ -277,7 +276,7 @@ export const subscriptionsApi = {
 
 // AI Suggestions API
 export const aiApi = {
-  async getSuggestions(projectId: string): Promise<ApiResponse<AISuggestion[]>> {
+  async getSuggestions(projectId: string): Promise<ApiResponse<any[]>> {
     const { data, error } = await supabase
       .from('ai_suggestions')
       .select('*')
