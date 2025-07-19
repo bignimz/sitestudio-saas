@@ -6,197 +6,290 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface ParseRequest {
-  url: string;
+interface ParsedComponent {
+  id: string;
+  type: string;
+  tag: string;
+  content?: string;
+  styles: Record<string, any>;
+  attributes: Record<string, any>;
+  children: ParsedComponent[];
+  selector: string;
+  position: { x: number; y: number; width: number; height: number };
 }
 
-interface ParsedComponent {
-  component_type: string;
-  content: Record<string, any>;
-  position: number;
-  is_visible: boolean;
+interface FrameworkDetection {
+  framework: string;
+  version?: string;
+  confidence: number;
+  indicators: string[];
 }
 
 interface ParsedSiteData {
+  url: string;
   title: string;
-  description?: string;
+  description: string;
+  framework: FrameworkDetection;
+  html: string;
+  css: string[];
+  js: string[];
   components: ParsedComponent[];
+  meta: {
+    charset: string;
+    viewport: string;
+    og: Record<string, string>;
+  };
 }
 
-async function parseSite(url: string): Promise<ParsedSiteData> {
+function detectFramework(html: string, scripts: string[]): FrameworkDetection {
+  const indicators: string[] = [];
+  let framework = 'HTML/CSS/JS';
+  let confidence = 0.3;
+  let version: string | undefined;
+
+  // React detection
+  if (html.includes('react') || html.includes('_react') || scripts.some(s => s.includes('react'))) {
+    framework = 'React';
+    confidence = 0.8;
+    indicators.push('React library detected');
+    
+    // Try to detect version
+    const reactVersionMatch = html.match(/react[\"']?[:\s]*[\"']?(\d+\.\d+\.\d+)/i);
+    if (reactVersionMatch) {
+      version = reactVersionMatch[1];
+      confidence = 0.9;
+    }
+  }
+  
+  // Next.js detection
+  if (html.includes('__NEXT_DATA__') || html.includes('_next/static')) {
+    framework = 'Next.js';
+    confidence = 0.95;
+    indicators.push('Next.js framework detected');
+  }
+  
+  // Vue detection
+  if (html.includes('vue') || html.includes('Vue') || scripts.some(s => s.includes('vue'))) {
+    framework = 'Vue.js';
+    confidence = 0.8;
+    indicators.push('Vue.js library detected');
+  }
+  
+  // Nuxt detection
+  if (html.includes('__NUXT__') || html.includes('_nuxt/')) {
+    framework = 'Nuxt.js';
+    confidence = 0.95;
+    indicators.push('Nuxt.js framework detected');
+  }
+  
+  // Angular detection
+  if (html.includes('ng-') || html.includes('angular') || scripts.some(s => s.includes('angular'))) {
+    framework = 'Angular';
+    confidence = 0.8;
+    indicators.push('Angular framework detected');
+  }
+  
+  // Svelte detection
+  if (html.includes('svelte') || scripts.some(s => s.includes('svelte'))) {
+    framework = 'Svelte';
+    confidence = 0.8;
+    indicators.push('Svelte framework detected');
+  }
+  
+  // WordPress detection
+  if (html.includes('wp-content') || html.includes('wordpress')) {
+    framework = 'WordPress';
+    confidence = 0.9;
+    indicators.push('WordPress CMS detected');
+  }
+  
+  // Static site generators
+  if (html.includes('jekyll') || html.includes('_site/')) {
+    framework = 'Jekyll';
+    confidence = 0.8;
+    indicators.push('Jekyll static site generator detected');
+  }
+  
+  if (html.includes('gatsby') || html.includes('___gatsby')) {
+    framework = 'Gatsby';
+    confidence = 0.9;
+    indicators.push('Gatsby framework detected');
+  }
+
+  return { framework, version, confidence, indicators };
+}
+
+function parseElement(element: any, index: number, parentSelector = ''): ParsedComponent {
+  const tagName = element.tagName?.toLowerCase() || 'div';
+  const selector = `${parentSelector} ${tagName}:nth-child(${index + 1})`.trim();
+  
+  // Extract styles
+  const computedStyles: Record<string, any> = {};
+  const style = element.getAttribute?.('style') || '';
+  if (style) {
+    style.split(';').forEach((declaration: string) => {
+      const [property, value] = declaration.split(':').map((s: string) => s.trim());
+      if (property && value) {
+        computedStyles[property] = value;
+      }
+    });
+  }
+  
+  // Extract all attributes
+  const attributes: Record<string, any> = {};
+  if (element.attributes) {
+    for (const attr of element.attributes) {
+      attributes[attr.name] = attr.value;
+    }
+  }
+  
+  // Determine component type based on element
+  let componentType = 'element';
+  if (tagName === 'header') componentType = 'header';
+  else if (tagName === 'nav') componentType = 'navigation';
+  else if (tagName === 'footer') componentType = 'footer';
+  else if (tagName === 'section') componentType = 'section';
+  else if (tagName === 'article') componentType = 'article';
+  else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) componentType = 'heading';
+  else if (tagName === 'p') componentType = 'paragraph';
+  else if (tagName === 'img') componentType = 'image';
+  else if (tagName === 'a') componentType = 'link';
+  else if (tagName === 'button') componentType = 'button';
+  else if (['input', 'textarea', 'select'].includes(tagName)) componentType = 'form-element';
+  else if (tagName === 'form') componentType = 'form';
+  else if (['ul', 'ol'].includes(tagName)) componentType = 'list';
+  else if (tagName === 'div' && attributes.class) {
+    // Try to infer from class names
+    const className = attributes.class.toLowerCase();
+    if (className.includes('card')) componentType = 'card';
+    else if (className.includes('modal')) componentType = 'modal';
+    else if (className.includes('sidebar')) componentType = 'sidebar';
+    else if (className.includes('hero')) componentType = 'hero';
+    else if (className.includes('cta')) componentType = 'call-to-action';
+  }
+  
+  // Extract text content
+  let content = '';
+  if (element.textContent) {
+    content = element.textContent.trim();
+  }
+  
+  // Parse children
+  const children: ParsedComponent[] = [];
+  if (element.children) {
+    for (let i = 0; i < element.children.length; i++) {
+      const child = parseElement(element.children[i], i, selector);
+      children.push(child);
+    }
+  }
+  
+  return {
+    id: `component-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type: componentType,
+    tag: tagName,
+    content,
+    styles: computedStyles,
+    attributes,
+    children,
+    selector,
+    position: { x: 0, y: 0, width: 0, height: 0 } // Will be calculated on frontend
+  };
+}
+
+async function fetchAndParseSite(url: string): Promise<ParsedSiteData> {
   try {
-    // Fetch the HTML content
-    const response = await fetch(url);
+    // Fetch the website
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; AI-Site-Editor/1.0; +https://ai-site-editor.com)'
+      }
+    });
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch site: ${response.status}`);
+      throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
     }
     
     const html = await response.text();
     
-    // Basic HTML parsing using regex (in production, use a proper HTML parser)
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+    // Parse HTML using DOMParser
+    const doc = new DOMParser().parseFromString(html, 'text/html');
     
-    const title = titleMatch ? titleMatch[1].trim() : 'Untitled Site';
-    const description = descMatch ? descMatch[1].trim() : undefined;
+    // Extract metadata
+    const title = doc.querySelector('title')?.textContent || 'Untitled';
+    const description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+    const charset = doc.querySelector('meta[charset]')?.getAttribute('charset') || 'utf-8';
+    const viewport = doc.querySelector('meta[name="viewport"]')?.getAttribute('content') || '';
     
+    // Extract Open Graph data
+    const ogData: Record<string, string> = {};
+    doc.querySelectorAll('meta[property^="og:"]').forEach(meta => {
+      const property = meta.getAttribute('property')?.replace('og:', '') || '';
+      const content = meta.getAttribute('content') || '';
+      if (property && content) {
+        ogData[property] = content;
+      }
+    });
+    
+    // Extract CSS links
+    const cssLinks: string[] = [];
+    doc.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href) {
+        cssLinks.push(new URL(href, url).href);
+      }
+    });
+    
+    // Extract JavaScript sources
+    const jsLinks: string[] = [];
+    doc.querySelectorAll('script[src]').forEach(script => {
+      const src = script.getAttribute('src');
+      if (src) {
+        jsLinks.push(new URL(src, url).href);
+      }
+    });
+    
+    // Detect framework
+    const framework = detectFramework(html, jsLinks);
+    
+    // Parse body components
+    const body = doc.querySelector('body');
     const components: ParsedComponent[] = [];
-    let position = 0;
     
-    // Extract header/nav
-    const navMatch = html.match(/<nav[^>]*>([\s\S]*?)<\/nav>/i) || 
-                    html.match(/<header[^>]*>([\s\S]*?)<\/header>/i);
-    if (navMatch) {
-      const navContent = navMatch[1];
-      const links = extractLinks(navContent);
-      
-      components.push({
-        component_type: 'navbar',
-        content: {
-          logoText: title,
-          links: links,
-          backgroundColor: '#ffffff',
-          textColor: '#000000'
-        },
-        position: position++,
-        is_visible: true
-      });
-    }
-    
-    // Extract hero section
-    const heroSelectors = [
-      /<section[^>]*class=["'][^"']*hero[^"']*["'][^>]*>([\s\S]*?)<\/section>/i,
-      /<div[^>]*class=["'][^"']*hero[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-      /<div[^>]*class=["'][^"']*banner[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
-    ];
-    
-    for (const regex of heroSelectors) {
-      const heroMatch = html.match(regex);
-      if (heroMatch) {
-        const heroContent = heroMatch[1];
-        const heroTitle = extractTextContent(heroContent, 'h1') || extractTextContent(heroContent, 'h2') || title;
-        const heroSubtitle = extractTextContent(heroContent, 'p');
-        const ctaLink = extractLinks(heroContent)[0];
-        
-        components.push({
-          component_type: 'hero',
-          content: {
-            title: heroTitle,
-            subtitle: heroSubtitle,
-            backgroundColor: '#f8fafc',
-            ctaText: ctaLink?.text || 'Learn More',
-            ctaUrl: ctaLink?.url || '#'
-          },
-          position: position++,
-          is_visible: true
-        });
-        break;
+    if (body && body.children) {
+      for (let i = 0; i < body.children.length; i++) {
+        const component = parseElement(body.children[i], i, 'body');
+        components.push(component);
       }
-    }
-    
-    // Extract main content sections
-    const sectionMatches = html.matchAll(/<section[^>]*>([\s\S]*?)<\/section>/gi);
-    for (const match of sectionMatches) {
-      const sectionContent = match[1];
-      const sectionTitle = extractTextContent(sectionContent, 'h2') || extractTextContent(sectionContent, 'h3');
-      const sectionText = extractTextContent(sectionContent, 'p');
-      
-      if (sectionTitle || sectionText) {
-        components.push({
-          component_type: 'section',
-          content: {
-            title: sectionTitle,
-            text: sectionText,
-            backgroundColor: '#ffffff'
-          },
-          position: position++,
-          is_visible: true
-        });
-      }
-    }
-    
-    // Extract images
-    const imgMatches = html.matchAll(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']*)["'][^>]*>/gi);
-    for (const match of imgMatches) {
-      const src = match[1];
-      const alt = match[2];
-      
-      // Skip small icons and logos
-      if (!src.includes('icon') && !src.includes('logo') && src.length > 10) {
-        components.push({
-          component_type: 'image',
-          content: {
-            url: src.startsWith('http') ? src : new URL(src, url).href,
-            alt: alt || 'Image'
-          },
-          position: position++,
-          is_visible: true
-        });
-      }
-    }
-    
-    // Extract footer
-    const footerMatch = html.match(/<footer[^>]*>([\s\S]*?)<\/footer>/i);
-    if (footerMatch) {
-      const footerContent = footerMatch[1];
-      const links = extractLinks(footerContent);
-      const copyrightMatch = footerContent.match(/©[^<]+/);
-      
-      components.push({
-        component_type: 'footer',
-        content: {
-          copyright: copyrightMatch ? copyrightMatch[0] : `© ${new Date().getFullYear()} ${title}`,
-          links: links,
-          backgroundColor: '#f8fafc',
-          textColor: '#64748b'
-        },
-        position: position++,
-        is_visible: true
-      });
     }
     
     return {
+      url,
       title,
       description,
-      components
+      framework,
+      html,
+      css: cssLinks,
+      js: jsLinks,
+      components,
+      meta: {
+        charset,
+        viewport,
+        og: ogData
+      }
     };
     
   } catch (error) {
-    console.error('Error parsing site:', error);
     throw new Error(`Failed to parse site: ${error.message}`);
   }
 }
 
-function extractTextContent(html: string, tag: string): string | undefined {
-  const regex = new RegExp(`<${tag}[^>]*>([^<]+)<\/${tag}>`, 'i');
-  const match = html.match(regex);
-  return match ? match[1].trim() : undefined;
-}
-
-function extractLinks(html: string): Array<{ text: string; url: string }> {
-  const links: Array<{ text: string; url: string }> = [];
-  const linkMatches = html.matchAll(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/gi);
-  
-  for (const match of linkMatches) {
-    const url = match[1];
-    const text = match[2].trim();
-    
-    if (text && text.length > 0 && !text.includes('<')) {
-      links.push({ text, url });
-    }
-  }
-  
-  return links;
-}
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { url }: ParseRequest = await req.json()
+    const { url } = await req.json()
     
     if (!url) {
       return new Response(
@@ -208,12 +301,12 @@ serve(async (req) => {
       )
     }
     
-    // Validate URL
+    // Validate URL format
     try {
       new URL(url);
     } catch {
       return new Response(
-        JSON.stringify({ error: 'Invalid URL provided' }),
+        JSON.stringify({ error: 'Invalid URL format' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -221,7 +314,11 @@ serve(async (req) => {
       )
     }
     
-    const parsedData = await parseSite(url);
+    console.log(`Parsing site: ${url}`);
+    
+    const parsedData = await fetchAndParseSite(url);
+    
+    console.log(`Successfully parsed ${url} - Framework: ${parsedData.framework.framework}`);
     
     return new Response(
       JSON.stringify(parsedData),
@@ -229,10 +326,15 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
+    
   } catch (error) {
-    console.error('Parse error:', error);
+    console.error('Error parsing site:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: 'Failed to parse site',
+        details: error.message 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
