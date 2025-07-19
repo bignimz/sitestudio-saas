@@ -4,23 +4,23 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 export default defineConfig({
-  plugins: [tailwindcss, react()],
+  plugins: [react(), tailwindcss],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
   server: {
-    proxy: {
-      "^/auth/v1": {
-        target: "https://jnptpnspdhpitvsygnwt.supabase.co",
-        changeOrigin: true,
-        secure: false,
-      },
-      "^/rest/v1": {
-        target: "https://jnptpnspdhpitvsygnwt.supabase.co",
-        changeOrigin: true,
-      },
-    },
+    port: 5173,
+    host: true,
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+  },
+  esbuild: {
+    loader: 'tsx',
+    include: /src\/.*\.[tj]sx?$/,
+    exclude: []
   },
 });
