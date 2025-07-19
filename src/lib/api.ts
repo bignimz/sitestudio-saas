@@ -91,50 +91,69 @@ const parseHtmlToComponents = (html: string, projectId: string) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     
-    // Find common components
+    // Enhanced component selectors with more specific targeting
     const componentSelectors = [
-      { selector: 'header, .header, #header', type: 'header', name: 'Header' },
-      { selector: 'nav, .nav, .navbar, .navigation', type: 'navigation', name: 'Navigation' },
-      { selector: '.hero, .hero-section, .banner', type: 'hero', name: 'Hero Section' },
-      { selector: 'main, .main, .content, .main-content', type: 'main-content', name: 'Main Content' },
-      { selector: 'footer, .footer, #footer', type: 'footer', name: 'Footer' },
+      { selector: 'header, [role="banner"], .header, #header', type: 'header', name: 'Header' },
+      { selector: 'nav, [role="navigation"], .nav, .navbar, .navigation', type: 'navigation', name: 'Navigation' },
+      { selector: '.hero, .hero-section, .banner, .jumbotron, .hero-banner', type: 'hero', name: 'Hero Section' },
+      { selector: 'main, [role="main"], .main, .content, .main-content', type: 'main-content', name: 'Main Content' },
+      { selector: 'footer, [role="contentinfo"], .footer, #footer', type: 'footer', name: 'Footer' },
       { selector: 'h1', type: 'heading', name: 'Main Heading' },
-      { selector: 'h2, h3', type: 'heading', name: 'Subheading' },
-      { selector: 'p', type: 'paragraph', name: 'Paragraph' },
-      { selector: 'img', type: 'image', name: 'Image' },
-      { selector: 'a', type: 'link', name: 'Link' },
-      { selector: 'button, .btn', type: 'button', name: 'Button' },
+      { selector: 'h2, h3, h4', type: 'heading', name: 'Heading' },
+      { selector: 'p:not(:empty)', type: 'paragraph', name: 'Paragraph' },
+      { selector: 'img[src]', type: 'image', name: 'Image' },
+      { selector: 'a[href]:not(:empty)', type: 'link', name: 'Link' },
+      { selector: 'button, .btn, input[type="button"], input[type="submit"]', type: 'button', name: 'Button' },
       { selector: 'section', type: 'section', name: 'Section' },
       { selector: 'article', type: 'article', name: 'Article' },
       { selector: 'aside, .sidebar', type: 'sidebar', name: 'Sidebar' },
-      { selector: 'form', type: 'form', name: 'Form' }
+      { selector: 'form', type: 'form', name: 'Form' },
+      { selector: '.card, .panel, .widget', type: 'card', name: 'Card Component' },
+      { selector: '.container, .wrapper, .row', type: 'container', name: 'Container' }
     ];
 
     componentSelectors.forEach(({ selector, type, name }) => {
       const elements = doc.querySelectorAll(selector);
       elements.forEach((element, index) => {
-        if (index < 3) { // Limit to first 3 of each type
-          const content = element.textContent?.trim().substring(0, 100) || '';
+        if (index < 5) { // Increased limit for more components
+          const textContent = element.textContent?.trim() || '';
+          
+          // Skip empty or very small elements
+          if (textContent.length < 3 && type !== 'image' && type !== 'container') {
+            return;
+          }
+
           const attributes: Record<string, any> = {};
           
-          // Extract attributes
+          // Extract all attributes
           for (const attr of element.attributes) {
             attributes[attr.name] = attr.value;
           }
+
+          // Extract computed styles from style attribute
+          const inlineStyles = extractInlineStyles(element.getAttribute('style') || '');
+          
+          // Get element's actual position in the document
+          const elementIndex = Array.from(element.parentNode?.children || []).indexOf(element);
 
           components.push({
             project_id: projectId,
             component_type: type,
             content: {
               tag: element.tagName.toLowerCase(),
-              content,
+              content: textContent.substring(0, 200), // More content for better context
+              originalHtml: element.outerHTML.substring(0, 500), // Store original HTML for reference
               styles: {
-                display: 'block',
-                margin: '0',
-                padding: '8px'
+                ...inlineStyles,
+                // Add some basic styling for editing
+                minHeight: type === 'image' ? 'auto' : '20px',
+                display: inlineStyles.display || 'block'
               },
               attributes,
-              selector: generateCSSSelector(element)
+              selector: generateAdvancedSelector(element),
+              xpath: generateXPath(element),
+              elementIndex,
+              parentTag: element.parentElement?.tagName.toLowerCase() || 'body'
             },
             position: componentId++,
             is_visible: true
@@ -143,160 +162,106 @@ const parseHtmlToComponents = (html: string, projectId: string) => {
       });
     });
 
+    console.log('Parsed components by type:', components.reduce((acc, comp) => {
+      acc[comp.component_type] = (acc[comp.component_type] || 0) + 1;
+      return acc;
+    }, {}));
+
   } catch (error) {
     console.error('Error parsing HTML:', error);
   }
 
-  return components.slice(0, 15); // Limit total components
+  return components.slice(0, 30); // Allow more components
 };
 
-const createFallbackComponents = (url: string, projectId: string) => {
-  const domain = new URL(url).hostname;
-  
-  return [
-    {
-      project_id: projectId,
-      component_type: 'header',
-      content: {
-        tag: 'header',
-        content: `Navigation Header - Edit this text`,
-        styles: { 
-          backgroundColor: '#ffffff', 
-          padding: '16px', 
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        },
-        attributes: { class: 'header navbar' },
-        selector: 'header'
-      },
-      position: 0,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'hero',
-      content: {
-        tag: 'section',
-        content: `Welcome to ${domain} - Hero Section`,
-        styles: { 
-          backgroundColor: '#3b82f6', 
-          color: '#ffffff',
-          padding: '80px 20px', 
-          textAlign: 'center',
-          fontSize: '48px',
-          fontWeight: 'bold'
-        },
-        attributes: { class: 'hero-section banner' },
-        selector: '.hero'
-      },
-      position: 1,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'navigation',
-      content: {
-        tag: 'nav',
-        content: `Home | About | Services | Contact`,
-        styles: { 
-          backgroundColor: '#f8fafc', 
-          padding: '12px 20px',
-          borderBottom: '1px solid #e5e7eb'
-        },
-        attributes: { class: 'navigation nav' },
-        selector: 'nav'
-      },
-      position: 2,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'paragraph',
-      content: {
-        tag: 'p',
-        content: `This is sample content from ${domain}. Click to edit this paragraph and customize the text, styling, and formatting to match your website's needs.`,
-        styles: { 
-          fontSize: '16px', 
-          lineHeight: '1.8', 
-          margin: '24px 0',
-          padding: '0 20px',
-          color: '#374151'
-        },
-        attributes: { class: 'content-paragraph' },
-        selector: 'p'
-      },
-      position: 3,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'button',
-      content: {
-        tag: 'button',
-        content: `Click Me - Call to Action`,
-        styles: { 
-          backgroundColor: '#10b981', 
-          color: '#ffffff', 
-          padding: '12px 24px',
-          border: 'none',
-          borderRadius: '6px',
-          fontSize: '16px',
-          fontWeight: '500',
-          cursor: 'pointer'
-        },
-        attributes: { class: 'cta-button btn' },
-        selector: 'button'
-      },
-      position: 4,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'image',
-      content: {
-        tag: 'img',
-        content: `Image placeholder`,
-        styles: { 
-          width: '100%',
-          maxWidth: '600px',
-          height: 'auto',
-          borderRadius: '8px',
-          margin: '20px 0'
-        },
-        attributes: { 
-          class: 'content-image',
-          src: 'https://via.placeholder.com/600x400/3b82f6/ffffff?text=Sample+Image',
-          alt: 'Sample website image'
-        },
-        selector: 'img'
-      },
-      position: 5,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'footer',
-      content: {
-        tag: 'footer',
-        content: `© 2024 ${domain}. All rights reserved. | Privacy Policy | Terms of Service`,
-        styles: { 
-          backgroundColor: '#1f2937', 
-          color: '#9ca3af', 
-          padding: '40px 20px',
-          textAlign: 'center',
-          fontSize: '14px',
-          marginTop: '60px'
-        },
-        attributes: { class: 'footer site-footer' },
-        selector: 'footer'
-      },
-      position: 6,
-      is_visible: true
+const extractComponentsViaProxy = async (url: string, projectId: string) => {
+  try {
+    // Try a different CORS proxy with better HTML extraction
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
+    
+    if (response.ok) {
+      const html = await response.text();
+      console.log('Alternative proxy fetch successful, HTML length:', html.length);
+      return parseHtmlToComponents(html, projectId);
     }
-  ];
+  } catch (error) {
+    console.log('Alternative proxy failed:', error);
+  }
+  
+  return [];
 };
+
+const generateAdvancedSelector = (element: Element): string => {
+  // Generate a more specific CSS selector
+  if (element.id) {
+    return `#${element.id}`;
+  }
+  
+  if (element.className) {
+    const classes = element.className.split(' ').filter(c => c.trim());
+    if (classes.length > 0) {
+      return `.${classes[0]}`;
+    }
+  }
+  
+  // Use tag + nth-child for better specificity
+  const parent = element.parentElement;
+  if (parent) {
+    const siblings = Array.from(parent.children);
+    const index = siblings.indexOf(element) + 1;
+    return `${element.tagName.toLowerCase()}:nth-child(${index})`;
+  }
+  
+  return element.tagName.toLowerCase();
+};
+
+const generateXPath = (element: Element): string => {
+  // Generate XPath for more precise element targeting
+  if (element.id) {
+    return `//*[@id="${element.id}"]`;
+  }
+  
+  const path = [];
+  let current = element;
+  
+  while (current && current.nodeType === Node.ELEMENT_NODE) {
+    let selector = current.tagName.toLowerCase();
+    
+    if (current.id) {
+      selector += `[@id="${current.id}"]`;
+      path.unshift(selector);
+      break;
+    } else {
+      const siblings = Array.from(current.parentNode?.children || []);
+      const index = siblings.indexOf(current) + 1;
+      selector += `[${index}]`;
+    }
+    
+    path.unshift(selector);
+    current = current.parentElement as Element;
+  }
+  
+  return '/' + path.join('/');
+};
+
+const extractInlineStyles = (styleString: string): Record<string, any> => {
+  const styles: Record<string, any> = {};
+  
+  if (!styleString) return styles;
+  
+  const rules = styleString.split(';');
+  rules.forEach(rule => {
+    const [property, value] = rule.split(':').map(s => s.trim());
+    if (property && value) {
+      styles[property] = value;
+    }
+  });
+  
+  return styles;
+};
+
+// Note: Removed createFallbackComponents - we only work with real website components
 
 const detectFrameworkFromHtml = (html: string) => {
   const indicators: string[] = [];
@@ -503,20 +468,25 @@ export const projectsApi = {
           }
         }
 
-        // Parse components or create fallback
+        // Parse real website components
         let components: any[] = [];
         
         if (html && html.length > 100) {
           console.log('Parsing HTML content, length:', html.length);
           components = parseHtmlToComponents(html, data.id);
           console.log('Parsed components from HTML:', components.length);
+        } else {
+          // If no HTML, try to extract components using a different approach
+          console.log('No HTML content, attempting alternative extraction');
+          components = await extractComponentsViaProxy(projectData.site_url, data.id);
         }
         
-        // If no components found or no HTML, create fallback components
         if (components.length === 0) {
-          console.log('No components parsed, creating fallback components');
-          components = createFallbackComponents(projectData.site_url, data.id);
-          console.log('Created fallback components:', components.length);
+          console.warn('⚠️ Could not extract any real components from the website');
+          console.log('This might be due to:');
+          console.log('- Website using JavaScript to render content');
+          console.log('- Strong CORS policies blocking access');
+          console.log('- Website structure not compatible with parsing');
         }
         
         // Detect framework from HTML or URL
