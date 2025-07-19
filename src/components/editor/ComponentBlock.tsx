@@ -2,7 +2,18 @@ import React, { useState } from "react";
 import { useDrag } from "react-dnd";
 import { motion } from "framer-motion";
 import { Edit, Trash2, Eye, EyeOff } from "lucide-react";
-import { Component } from "../../types";
+
+interface Component {
+  id: string;
+  project_id: string;
+  component_type: string;
+  content: Record<string, any>;
+  position: number;
+  styles?: Record<string, any>;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 interface ComponentBlockProps {
   data: Component;

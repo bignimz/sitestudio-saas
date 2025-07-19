@@ -3,8 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Plus, Globe, Edit, Trash2, ExternalLink } from "lucide-react";
 import { projectsApi, authApi } from "../lib/api";
-import { Project } from "../types";
 import { toast } from "sonner";
+
+// Temporary type definition
+interface Project {
+  id: string;
+  user_id: string;
+  site_url?: string;
+  title: string;
+  description?: string;
+  is_published: boolean;
+  published_url?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([]);
