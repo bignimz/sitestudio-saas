@@ -105,6 +105,63 @@ export const userApi = {
 
 // Projects API
 export const projectsApi = {
+  // New methods matching Dashboard expectations
+  async getAll(): Promise<Project[]> {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user?.user?.id) {
+      throw new Error('User not authenticated');
+    }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('user_id', user.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data || [];
+  },
+
+  async create(projectData: { site_url: string; title: string; description: string }): Promise<Project> {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user?.user?.id) {
+      throw new Error('User not authenticated');
+    }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        user_id: user.user.id,
+        site_url: projectData.site_url,
+        title: projectData.title,
+        description: projectData.description,
+        is_published: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Original methods for backward compatibility
   async getProjects(page = 1, limit = 10): Promise<ApiResponse<PaginatedResponse<Project>>> {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -427,6 +484,26 @@ export const aiApi = {
 
 // Auth helper functions
 export const authApi = {
+  // New methods matching Dashboard expectations
+  async getCurrentUser(): Promise<any> {
+    const { data, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data.user;
+  },
+
+  async logout(): Promise<void> {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Original methods for backward compatibility
   async signUp(email: string, password: string): Promise<ApiResponse<any>> {
     const { data, error } = await supabase.auth.signUp({
       email,
