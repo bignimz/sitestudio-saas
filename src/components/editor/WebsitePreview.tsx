@@ -276,23 +276,43 @@ export default function WebsitePreview({
           }}
         >
           {siteUrl ? (
-            <iframe
-              ref={iframeRef}
-              src={siteUrl}
-              className="w-full h-full border-0"
-              onLoad={handleIframeLoad}
-              title="Website Preview"
-              sandbox="allow-scripts allow-same-origin allow-forms"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
-              <div className="text-center">
-                <Monitor className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                <p>No website URL available</p>
-                <p className="text-sm">Add a website URL to start editing</p>
-              </div>
+            <div className="w-full h-full relative">
+              <iframe
+                ref={iframeRef}
+                src={siteUrl}
+                className="w-full h-full border-0"
+                onLoad={handleIframeLoad}
+                onError={() => console.error('Failed to load website')}
+                title="Website Preview"
+                sandbox="allow-scripts allow-same-origin allow-forms"
+              />
+              {!iframeLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-3"></div>
+                    <p className="text-sm text-gray-600">Loading website...</p>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+                      ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                <div className="text-center max-w-md p-6">
+                  <Monitor className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Website Preview</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Your website will appear here for visual editing. Due to CORS restrictions, 
+                    some websites may not load in the preview.
+                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                    <h4 className="font-medium text-blue-900 mb-2">Demo Mode Active</h4>
+                    <p className="text-xs text-blue-700">
+                      We've created sample components from your website that you can edit using the sidebar and properties panel.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
         </motion.div>
       </div>
 

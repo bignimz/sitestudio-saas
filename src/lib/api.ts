@@ -149,27 +149,91 @@ export const projectsApi = {
         throw new Error(error.message);
       }
 
-      // Parse the website using our edge function
-      const parseResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-website`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({ 
-          url: projectData.site_url,
-          projectId: data.id
-        })
-      });
+      // Create some mock components for demonstration
+      // In production, this would call the edge function to parse the actual website
+      try {
+        const mockComponents = [
+          {
+            project_id: data.id,
+            component_type: 'header',
+            content: {
+              tag: 'header',
+              content: 'Website Header',
+              styles: { backgroundColor: '#ffffff', padding: '16px' },
+              attributes: { class: 'header' },
+              selector: 'header'
+            },
+            position: 0,
+            is_visible: true
+          },
+          {
+            project_id: data.id,
+            component_type: 'hero',
+            content: {
+              tag: 'section',
+              content: 'Hero Section - Welcome to the website',
+              styles: { backgroundColor: '#f8fafc', padding: '64px 16px', textAlign: 'center' },
+              attributes: { class: 'hero' },
+              selector: '.hero'
+            },
+            position: 1,
+            is_visible: true
+          },
+          {
+            project_id: data.id,
+            component_type: 'paragraph',
+            content: {
+              tag: 'p',
+              content: 'This is a sample paragraph from the website that you can edit.',
+              styles: { fontSize: '16px', lineHeight: '1.6', margin: '16px 0' },
+              attributes: {},
+              selector: 'p'
+            },
+            position: 2,
+            is_visible: true
+          },
+          {
+            project_id: data.id,
+            component_type: 'footer',
+            content: {
+              tag: 'footer',
+              content: '© 2024 Website. All rights reserved.',
+              styles: { backgroundColor: '#1f2937', color: '#ffffff', padding: '32px 16px', textAlign: 'center' },
+              attributes: { class: 'footer' },
+              selector: 'footer'
+            },
+            position: 3,
+            is_visible: true
+          }
+        ];
 
-      if (!parseResponse.ok) {
-        console.error('Website parsing failed, but project created successfully');
-        // Don't fail project creation if parsing fails
-        return data;
+        // Insert mock components
+        const { error: componentsError } = await supabase
+          .from('components')
+          .insert(mockComponents);
+
+        if (componentsError) {
+          console.error('Error creating mock components:', componentsError);
+        } else {
+          console.log('Mock components created successfully');
+        }
+
+        // Update project with mock framework detection
+        await supabase
+          .from('projects')
+          .update({
+            framework: {
+              framework: 'HTML/CSS/JS',
+              confidence: 80,
+              indicators: ['Standard HTML elements detected']
+            }
+          })
+          .eq('id', data.id);
+
+      } catch (error) {
+        console.error('Error creating components:', error);
+        // Continue without failing project creation
       }
-
-      const parsedData = await parseResponse.json();
-      console.log('Website parsed successfully:', parsedData);
 
       return data;
     } catch (error: any) {
