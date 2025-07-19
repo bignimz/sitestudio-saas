@@ -68,7 +68,12 @@ export default function SidebarPanel({
 
       {/* Components List Section */}
       <div className="flex-1 p-4 overflow-y-auto">
-        <h3 className="font-semibold text-lg mb-4">Page Structure</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-lg">Page Structure</h3>
+          <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+            Click to Edit
+          </div>
+        </div>
         {components.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Layout className="mx-auto h-12 w-12 text-gray-300 mb-3" />

@@ -351,11 +351,18 @@ const Dashboard = () => {
                     <span>Created {formatDate(project.created_at)}</span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className={`w-2 h-2 rounded-full ${project.is_published ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                    <span className="text-gray-600">
-                      {project.is_published ? 'Published' : 'Draft'}
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className={`w-2 h-2 rounded-full ${project.is_published ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-gray-600">
+                        {project.is_published ? 'Published' : 'Draft'}
+                      </span>
+                    </div>
+                    {(project as any).framework && (
+                      <div className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                        {(project as any).framework.framework}
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -52,6 +52,10 @@ export default function WebsitePreview({
       const iframeDoc = iframeRef.current.contentDocument;
       if (!iframeDoc) {
         console.log('Cannot access iframe document - likely CORS restricted');
+        setSelectedElementInfo({ 
+          corsError: true, 
+          message: 'Interactive editing is blocked by CORS policy. Use the sidebar components for editing.' 
+        });
         return;
       }
 
@@ -59,6 +63,10 @@ export default function WebsitePreview({
       const iframeWindow = iframeRef.current.contentWindow;
       if (!iframeWindow) {
         console.log('Cannot access iframe window - CORS restricted');
+        setSelectedElementInfo({ 
+          corsError: true, 
+          message: 'Interactive editing is blocked by CORS policy. Use the sidebar components for editing.' 
+        });
         return;
       }
 
@@ -338,6 +346,26 @@ export default function WebsitePreview({
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-3"></div>
                     <p className="text-sm text-gray-600">Loading website...</p>
+                  </div>
+                </div>
+              )}
+              {selectedElementInfo?.corsError && iframeLoaded && (
+                <div className="absolute top-4 left-4 right-4 bg-orange-50 border border-orange-200 rounded-lg p-4 shadow-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                        <span className="text-orange-600 text-sm font-semibold">!</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-orange-800 mb-1">
+                        Interactive Editing Unavailable
+                      </h4>
+                      <p className="text-xs text-orange-700">
+                        This website blocks direct editing due to security policies. 
+                        You can still edit components using the sidebar panel.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
