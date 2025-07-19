@@ -7,16 +7,14 @@ import {
   CheckCircle, 
   Star, 
   Globe, 
-  Sparkles,
+  Scan,
+  Edit3,
   Code,
-  Palette,
   Zap,
   Users,
-  Clock,
   Eye,
-  Monitor,
-  Smartphone,
-  Tablet
+  LogIn,
+  Save
 } from "lucide-react";
 
 const Home = () => {
@@ -29,57 +27,71 @@ const Home = () => {
 
   const features = [
     {
-      icon: Sparkles,
+      icon: Scan,
       title: "AI-Powered Scanning",
-      description: "Our AI automatically detects and maps all components, sections, and content blocks in your static website."
+      description: "Our AI automatically detects and maps all components, sections, and content blocks in your static website.",
+      color: "text-blue-600"
     },
     {
-      icon: Palette,
+      icon: Edit3,
       title: "Visual Content Editor",
-      description: "Edit text, images, and layouts with an intuitive drag-and-drop interface. No coding required."
+      description: "Edit text, images, and layouts with an intuitive drag-and-drop interface. No coding required.",
+      color: "text-green-600"
     },
     {
       icon: Code,
       title: "Advanced Code Editor",
-      description: "For developers: Direct access to HTML, CSS, and JavaScript with syntax highlighting and live preview."
+      description: "For developers: Direct access to HTML, CSS, and JavaScript with syntax highlighting and live preview.",
+      color: "text-purple-600"
     },
     {
       icon: Zap,
       title: "Instant Publishing",
-      description: "Changes go live immediately. See your updates reflected on your actual website in real-time."
+      description: "Changes go live immediately. See your updates reflected on your actual website in real-time.",
+      color: "text-orange-600"
     },
     {
       icon: Users,
       title: "Team Collaboration",
-      description: "Invite team members with different permission levels. Perfect for agencies and content teams."
+      description: "Invite team members with different permission levels. Perfect for agencies and content teams.",
+      color: "text-red-600"
     },
     {
       icon: Globe,
       title: "Multi-Site Management",
-      description: "Manage multiple websites from a single dashboard. Perfect for agencies and freelancers."
+      description: "Manage multiple websites from a single dashboard. Perfect for agencies and freelancers.",
+      color: "text-teal-600"
     }
   ];
 
   const steps = [
     {
       step: "Step 1",
+      icon: Globe,
       title: "Enter Website URL",
-      description: "Simply paste the URL of your static website"
+      description: "Simply paste the URL of your static website",
+      color: "text-blue-600"
     },
     {
       step: "Step 2", 
+      icon: Scan,
       title: "AI Analysis",
-      description: "Our AI scans and identifies all components and sections"
+      description: "Our AI scans and identifies all components and sections",
+      color: "text-green-600"
     },
     {
       step: "Step 3",
-      title: "Visual Editing", 
-      description: "Edit content, images, and layouts using our visual editor"
+      icon: Edit3,
+      title: "Visual Editing",
+      description: "Edit content, images, and layouts using our visual editor",
+      color: "text-purple-600"
     },
     {
       step: "Step 4",
+      icon: Save,
       title: "Publish Changes",
-      description: "Changes go live instantly on your actual website"
+      description: "Changes go live instantly on your actual website",
+      color: "text-orange-600"
     }
   ];
 
@@ -106,11 +118,29 @@ const Home = () => {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-2">
               <Wand2 className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                SiteDynamic
+              <span className="text-2xl font-bold text-gray-900">
+                SiteStudio
               </span>
             </div>
             <div className="flex items-center space-x-6">
+              <a 
+                href="#features" 
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+              >
+                Features
+              </a>
+              <a 
+                href="#how-it-works" 
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+              >
+                How It Works
+              </a>
+              <a 
+                href="#frameworks" 
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+              >
+                Frameworks
+              </a>
               <Link 
                 to="/pricing" 
                 className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
@@ -119,15 +149,17 @@ const Home = () => {
               </Link>
               <Link 
                 to="/login" 
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
               >
+                <LogIn className="h-4 w-4" />
                 Login
               </Link>
               <Link 
                 to="/login" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 Get Started
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
@@ -135,34 +167,8 @@ const Home = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-20 pb-32 relative overflow-hidden">
-        {/* Background Animation */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50">
-          <div className="absolute top-0 left-0 w-full h-full">
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-64 h-64 rounded-full bg-gradient-to-r from-blue-200/20 to-purple-200/20"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                }}
-                animate={{
-                  x: [0, 30, 0],
-                  y: [0, -30, 0],
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{
-                  duration: 10 + i * 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <section className="pt-20 pb-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stats Bar */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -170,7 +176,7 @@ const Home = () => {
             transition={{ duration: 0.8 }}
             className="flex justify-center mb-16"
           >
-            <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-gray-200/50">
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 {stats.map((stat, index) => (
                   <motion.div
@@ -180,7 +186,7 @@ const Home = () => {
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                     className="text-center"
                   >
-                    <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    <div className="text-2xl font-bold text-blue-600">
                       {stat.number}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">
@@ -199,48 +205,48 @@ const Home = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-                Everything You Need to Make{" "}
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Static Sites Dynamic
+                             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+                Transform Any Static Website Into a{" "}
+                <span className="text-blue-600">
+                  Dynamic Experience
                 </span>
               </h1>
               <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
-                Powerful features that work with any static website, regardless of how it was built.
+                Turn your static HTML sites into fully editable, dynamic websites with AI-powered component detection. No rebuilding required - just paste your URL and start editing.
               </p>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-            >
-              <Link 
-                to="/login" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-2"
-              >
-                Start Free Trial
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <button className="bg-white/80 backdrop-blur-sm text-gray-800 px-8 py-4 rounded-xl font-semibold text-lg border border-gray-200 hover:bg-white hover:shadow-lg transition-all duration-200 flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Watch Demo
-              </button>
-            </motion.div>
+                         <motion.div
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.8, delay: 0.4 }}
+               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+             >
+               <Link 
+                 to="/login" 
+                 className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+               >
+                 Start Free Trial
+                 <ArrowRight className="h-5 w-5" />
+               </Link>
+               <button className="bg-white text-gray-800 px-8 py-4 rounded-lg font-semibold text-lg border border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-2">
+                 <Eye className="h-5 w-5" />
+                 Watch Demo
+               </button>
+             </motion.div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Powerful Features for Every Need
+      <section id="features" className="py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Everything You Need to Make Static Sites Dynamic
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Transform your static website with cutting-edge AI and intuitive editing tools
+              Powerful features that work with any static website, regardless of how it was built.
             </p>
           </div>
 
@@ -252,10 +258,10 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl border border-gray-200 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
+                className="border-2 hover:border-blue-200 transition-all duration-300 hover:shadow-lg group bg-white p-6 rounded-lg"
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <feature.icon className="h-6 w-6 text-white" />
+                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <feature.icon className={`h-6 w-6 ${feature.color}`} />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">
                   {feature.title}
@@ -270,59 +276,61 @@ const Home = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-24 bg-gradient-to-br from-blue-50 to-purple-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+      <section id="how-it-works" className="py-24 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               How It Works
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600">
               Transform your static website into a dynamic, editable experience in just four simple steps.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 relative">
             {steps.map((step, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="text-center group"
-              >
-                <div className="relative mb-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <span className="text-white font-bold text-lg">{index + 1}</span>
+              <div key={index} className="relative">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="text-center border-2 hover:border-blue-200 transition-all duration-300 hover:shadow-lg bg-white p-6 rounded-lg"
+                >
+                  <div className="text-sm font-semibold text-blue-600 mb-2">
+                    {step.step}
                   </div>
-                  {index < steps.length - 1 && (
-                    <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-gradient-to-r from-blue-200 to-purple-200 transform -translate-x-8"></div>
-                  )}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {step.step}
-                </h3>
-                <h4 className="text-xl font-bold text-gray-900 mb-4">
-                  {step.title}
-                </h4>
-                <p className="text-gray-600">
-                  {step.description}
-                </p>
-              </motion.div>
+                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                    <step.icon className={`h-8 w-8 ${step.color}`} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    {step.title}
+                  </h3>
+                  <p className="text-gray-600">
+                    {step.description}
+                  </p>
+                </motion.div>
+                
+                {index < steps.length - 1 && (
+                  <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
+                    <ArrowRight className="h-6 w-6 text-gray-400" />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Framework Support Section */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="frameworks" className="py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
               Works with Any Framework
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              SiteDynamic integrates seamlessly with any static website, regardless of the technology stack used to build it.
+              SiteStudio integrates seamlessly with any static website, regardless of the technology stack used to build it.
             </p>
           </div>
 
@@ -348,224 +356,10 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-24 bg-gradient-to-br from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Start free, scale as you grow
-            </p>
-            
-            {/* Early Bird Banner */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-xl inline-block mb-8"
-            >
-              <span className="font-bold">🔥 EARLY BIRD SPECIAL</span>
-              <div className="text-sm">One-Time Payment: Only $249 for the first 100 customers!</div>
-              <div className="text-xs opacity-90">Limited time offer - Lifetime access with all features included</div>
-            </motion.div>
-          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            {/* Free Plan */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="bg-white p-8 rounded-2xl border border-gray-200 hover:shadow-xl transition-all duration-300"
-            >
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Free</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-2">Free</div>
-              <p className="text-gray-600 mb-6">Perfect for testing</p>
-              
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">2-3 updates and deployments</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Basic AI scanning</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Visual editor</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Community support</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">1 website</span>
-                </li>
-              </ul>
-              
-              <button className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                Get Started
-              </button>
-            </motion.div>
-
-            {/* Daily Access */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              viewport={{ once: true }}
-              className="bg-white p-8 rounded-2xl border border-gray-200 hover:shadow-xl transition-all duration-300"
-            >
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Daily Access</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-2">$9</div>
-              <p className="text-gray-600 mb-1">or $18 for 3 days</p>
-              <p className="text-sm text-gray-500 mb-6">for 24 hours</p>
-              
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">24 hours full access</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">All AI features</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Visual & code editor</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Priority support</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Unlimited updates</span>
-                </li>
-              </ul>
-              
-              <div className="space-y-2">
-                <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                  Get 24h Access
-                </button>
-                <button className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">
-                  Get 3-Day Access ($18)
-                </button>
-              </div>
-            </motion.div>
-
-            {/* Pro Access */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-blue-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 hover:shadow-xl transition-all duration-300 relative"
-            >
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Most Popular
-                </span>
-              </div>
-              
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Pro Access</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-2">$250</div>
-              <p className="text-gray-600 mb-1">/year</p>
-              <p className="text-sm text-green-600 font-medium mb-6">Save $50/year (17% off)</p>
-              
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Unlimited websites</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Advanced AI features</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Code editor</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Custom domains</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Priority support</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Real-time collaboration</span>
-                </li>
-              </ul>
-              
-              <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
-                Start Pro Trial
-              </button>
-            </motion.div>
-
-            {/* Early Bird */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-orange-50 to-red-50 p-8 rounded-2xl border-2 border-orange-200 hover:shadow-xl transition-all duration-300 relative"
-            >
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Early Bird
-                </span>
-              </div>
-              
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">One-Time Payment</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-2">$249</div>
-              <p className="text-gray-600 mb-6">Lifetime access</p>
-              
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Lifetime access</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">All features included</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Unlimited websites</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Priority support</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Future updates included</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">No recurring fees</span>
-                </li>
-              </ul>
-              
-              <button className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-red-600 transition-all duration-200">
-                Get Lifetime Access
-              </button>
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="py-24 bg-blue-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -582,12 +376,12 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
                 to="/login" 
-                className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
               >
                 Start Free Trial
                 <ArrowRight className="h-5 w-5" />
               </Link>
-              <button className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transition-all duration-200">
+              <button className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-blue-600 transition-colors">
                 Schedule Demo
               </button>
             </div>
@@ -601,10 +395,10 @@ const Home = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <Wand2 className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold">SiteDynamic</span>
+              <span className="text-2xl font-bold">SiteStudio</span>
             </div>
             <div className="text-gray-400">
-              © 2024 SiteDynamic. All rights reserved.
+              © 2024 SiteStudio. All rights reserved.
             </div>
           </div>
         </div>
