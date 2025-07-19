@@ -77,8 +77,14 @@ export default function SidebarPanel({
         {components.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Layout className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-            <p className="text-sm">No components yet</p>
-            <p className="text-xs">Add components to get started</p>
+            <p className="text-sm">No real components detected</p>
+            <p className="text-xs mb-4">This could be due to CORS restrictions</p>
+            <div className="text-xs bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-yellow-700">
+              <p className="font-medium mb-1">What to do:</p>
+              <p>• Use the Code Editor to make direct changes</p>
+              <p>• Edit the live website via iframe (visual mode)</p>
+              <p>• Website changes can still be published</p>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">

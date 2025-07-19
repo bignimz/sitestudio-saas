@@ -5,6 +5,8 @@ import { Save, Eye, ArrowLeft, Sparkles } from "lucide-react";
 import WebsitePreview from "../components/editor/WebsitePreview";
 import PropertiesPanel from "../components/editor/PropertiesPanel";
 import SidebarPanel from "../components/editor/SidebarPanel";
+import EditorModeSelector from "../components/editor/EditorModeSelector";
+import CodeEditor from "../components/editor/CodeEditor";
 import { projectsApi, componentsApi, aiApi } from "../lib/api";
 import { toast } from "sonner";
 
@@ -40,6 +42,7 @@ export default function Editor() {
   const [components, setComponents] = useState<Component[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [gettingSuggestions, setGettingSuggestions] = useState(false);
@@ -280,8 +283,11 @@ export default function Editor() {
             </button>
             <div>
               <h1 className="text-lg font-semibold">{project.title}</h1>
-              <p className="text-sm text-gray-500">Visual Editor</p>
+              <p className="text-sm text-gray-500">
+                {editorMode === 'visual' ? 'Visual Editor' : 'Code Editor'}
+              </p>
             </div>
+            <EditorModeSelector mode={editorMode} onModeChange={setEditorMode} />
           </div>
           
           <div className="flex items-center gap-3">
@@ -321,26 +327,54 @@ export default function Editor() {
 
       {/* Main Editor */}
       <div className="flex pt-16 w-full h-screen">
-        <SidebarPanel 
-          onAddComponent={handleAddComponent}
-          components={components}
-          selectedComponent={selectedComponent}
-          onComponentSelect={setSelectedComponent}
-          onReorderComponents={handleReorderComponents}
-        />
-        <WebsitePreview
-          siteUrl={project.site_url || ''}
-          components={components}
-          selectedComponent={selectedComponent}
-          onComponentSelect={setSelectedComponent}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
-        <PropertiesPanel
-          selectedComponent={selectedComponent}
-          onUpdateComponent={handleUpdateComponent}
-          onDeleteComponent={handleDeleteComponent}
-        />
+        {editorMode === 'visual' ? (
+          <>
+            <SidebarPanel 
+              onAddComponent={handleAddComponent}
+              components={components}
+              selectedComponent={selectedComponent}
+              onComponentSelect={setSelectedComponent}
+              onReorderComponents={handleReorderComponents}
+            />
+            <WebsitePreview
+              siteUrl={project.site_url || ''}
+              components={components}
+              selectedComponent={selectedComponent}
+              onComponentSelect={setSelectedComponent}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
+            <PropertiesPanel
+              selectedComponent={selectedComponent}
+              onUpdateComponent={handleUpdateComponent}
+              onDeleteComponent={handleDeleteComponent}
+            />
+          </>
+        ) : (
+          <div className="flex-1 flex">
+            <div className="w-80 border-r bg-white">
+              <SidebarPanel 
+                onAddComponent={handleAddComponent}
+                components={components}
+                selectedComponent={selectedComponent}
+                onComponentSelect={setSelectedComponent}
+                onReorderComponents={handleReorderComponents}
+              />
+            </div>
+            <div className="flex-1">
+              <CodeEditor
+                projectId={project.id}
+                siteUrl={project.site_url || ''}
+                onSave={(css, js) => {
+                  // Handle code saving logic here
+                  console.log('CSS:', css);
+                  console.log('JS:', js);
+                  toast.success('Code changes saved!');
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

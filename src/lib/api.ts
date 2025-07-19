@@ -336,161 +336,19 @@ const tryMultipleExtractionMethods = async (url: string): Promise<string> => {
   return '';
 };
 
-const createBasicStructureComponents = (url: string, projectId: string) => {
-  const domain = new URL(url).hostname.replace('www.', '');
+// Normalize component types to valid database values
+const normalizeComponentType = (type: string): string => {
+  // Convert any component type to a simple text format that won't violate constraints
+  const normalized = type.toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')  // Replace non-alphanumeric with underscore
+    .replace(/_+/g, '_')         // Replace multiple underscores with single
+    .replace(/^_|_$/g, '');      // Remove leading/trailing underscores
   
-  // Create basic components that represent typical website structure
-  // These are still "real" in the sense that they represent actual website sections
-  return [
-    {
-      project_id: projectId,
-      component_type: 'header',
-      content: {
-        tag: 'header',
-        content: `${domain} - Header Section`,
-        originalHtml: `<header>${domain} - Header Section</header>`,
-        styles: { 
-          backgroundColor: '#ffffff',
-          padding: '20px',
-          borderBottom: '1px solid #e5e7eb',
-          position: 'relative'
-        },
-        attributes: { class: 'site-header' },
-        selector: 'header',
-        xpath: '//header',
-        elementIndex: 0,
-        parentTag: 'body',
-        note: 'This represents the header section of your website. Edit this to change header styling and content.'
-      },
-      position: 0,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'navigation',
-      content: {
-        tag: 'nav',
-        content: 'Home | About | Services | Contact',
-        originalHtml: '<nav>Home | About | Services | Contact</nav>',
-        styles: { 
-          backgroundColor: '#f8fafc',
-          padding: '15px 20px',
-          borderBottom: '1px solid #e5e7eb'
-        },
-        attributes: { class: 'main-navigation' },
-        selector: 'nav',
-        xpath: '//nav',
-        elementIndex: 1,
-        parentTag: 'body',
-        note: 'Main navigation menu. Edit to change navigation links and styling.'
-      },
-      position: 1,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'heading',
-      content: {
-        tag: 'h1',
-        content: `Welcome to ${domain}`,
-        originalHtml: `<h1>Welcome to ${domain}</h1>`,
-        styles: { 
-          fontSize: '48px',
-          fontWeight: 'bold',
-          color: '#1f2937',
-          textAlign: 'center',
-          margin: '40px 0'
-        },
-        attributes: { class: 'main-heading' },
-        selector: 'h1',
-        xpath: '//h1',
-        elementIndex: 0,
-        parentTag: 'main',
-        note: 'Main page heading. Edit to change the primary heading text and styling.'
-      },
-      position: 2,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'paragraph',
-      content: {
-        tag: 'p',
-        content: `This is the main content area of ${domain}. You can edit this text to match your website's actual content. This component represents text content that appears on your website.`,
-        originalHtml: `<p>This is the main content area of ${domain}...</p>`,
-        styles: { 
-          fontSize: '18px',
-          lineHeight: '1.7',
-          color: '#374151',
-          margin: '20px 0',
-          padding: '0 20px'
-        },
-        attributes: { class: 'main-content' },
-        selector: 'p',
-        xpath: '//p[1]',
-        elementIndex: 0,
-        parentTag: 'main',
-        note: 'Main content paragraph. Edit to change body text and styling.'
-      },
-      position: 3,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'image',
-      content: {
-        tag: 'img',
-        content: 'Website main image',
-        originalHtml: '<img src="placeholder.jpg" alt="Website main image">',
-        styles: { 
-          width: '100%',
-          maxWidth: '800px',
-          height: 'auto',
-          borderRadius: '8px',
-          margin: '30px auto',
-          display: 'block'
-        },
-        attributes: { 
-          class: 'main-image',
-          src: `https://via.placeholder.com/800x400/3b82f6/ffffff?text=${encodeURIComponent(domain)}`,
-          alt: `${domain} main image`
-        },
-        selector: 'img',
-        xpath: '//img[1]',
-        elementIndex: 0,
-        parentTag: 'main',
-        note: 'Main website image. Edit to change image source and styling.'
-      },
-      position: 4,
-      is_visible: true
-    },
-    {
-      project_id: projectId,
-      component_type: 'footer',
-      content: {
-        tag: 'footer',
-        content: `© 2024 ${domain}. All rights reserved.`,
-        originalHtml: `<footer>© 2024 ${domain}. All rights reserved.</footer>`,
-        styles: { 
-          backgroundColor: '#1f2937',
-          color: '#9ca3af',
-          padding: '40px 20px',
-          textAlign: 'center',
-          fontSize: '14px',
-          marginTop: 'auto'
-        },
-        attributes: { class: 'site-footer' },
-        selector: 'footer',
-        xpath: '//footer',
-        elementIndex: 0,
-        parentTag: 'body',
-        note: 'Website footer. Edit to change footer content and styling.'
-      },
-      position: 5,
-      is_visible: true
-    }
-  ];
+  // Ensure it's not empty
+  return normalized || 'element';
 };
+
+// Removed fake component creation - we only work with real website components
 
 const detectFrameworkFromHtml = (html: string) => {
   const indicators: string[] = [];
@@ -667,8 +525,34 @@ export const projectsApi = {
         let html = '';
         let framework = { framework: 'HTML/CSS/JS', confidence: 50, indicators: ['Default detection'] };
         
-        // Try multiple methods to extract website content
-        html = await tryMultipleExtractionMethods(projectData.site_url);
+        // Try Supabase Edge Function first (bypasses CORS), then fallback methods
+        try {
+          console.log('🔄 Attempting to parse website via Supabase Edge Function...');
+          const { data: parseResult, error: parseError } = await supabase.functions.invoke('parse-website', {
+            body: { url: projectData.site_url }
+          });
+
+          if (parseError) {
+            console.log('Supabase function failed:', parseError);
+            throw parseError;
+          }
+
+          if (parseResult && parseResult.html) {
+            html = parseResult.html;
+            console.log('✅ Supabase function successful, HTML length:', html.length);
+            
+            // Use framework detection from edge function if available
+            if (parseResult.framework) {
+              framework = parseResult.framework;
+              console.log('Framework detected by edge function:', framework);
+            }
+          } else {
+            throw new Error('No HTML returned from edge function');
+          }
+        } catch (edgeFunctionError) {
+          console.log('Edge function failed, trying direct methods:', edgeFunctionError);
+          html = await tryMultipleExtractionMethods(projectData.site_url);
+        }
 
         // Parse real website components
         let components: any[] = [];
@@ -677,16 +561,28 @@ export const projectsApi = {
           console.log('Parsing HTML content, length:', html.length);
           components = parseHtmlToComponents(html, data.id);
           console.log('Parsed components from HTML:', components.length);
+          
+          // Normalize component types to valid database values
+          components = components.map(comp => ({
+            ...comp,
+            component_type: normalizeComponentType(comp.component_type)
+          }));
         } else {
           // If no HTML, try to extract components using a different approach
           console.log('No HTML content, attempting alternative extraction');
           components = await extractComponentsViaProxy(projectData.site_url, data.id);
+          
+          // Normalize component types for extracted components too
+          components = components.map(comp => ({
+            ...comp,
+            component_type: normalizeComponentType(comp.component_type)
+          }));
         }
         
         if (components.length === 0) {
-          console.warn('⚠️ Could not extract real components, creating basic structure components');
-          components = createBasicStructureComponents(projectData.site_url, data.id);
-          console.log(`Created ${components.length} basic structure components for editing`);
+          console.warn('⚠️ Could not extract real components due to CORS restrictions');
+          console.log('User will need to use URL-based editing or provide HTML content manually');
+          // Don't create fake components - let the user work with the live site via iframe
         }
         
         // Detect framework from HTML or URL
