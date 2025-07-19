@@ -17,12 +17,16 @@ interface Component {
 interface SidebarPanelProps {
   onAddComponent: (type: string) => void;
   components: Component[];
+  selectedComponent: Component | null;
+  onComponentSelect: (component: Component) => void;
   onReorderComponents: (components: Component[]) => void;
 }
 
 export default function SidebarPanel({ 
   onAddComponent, 
-  components, 
+  components,
+  selectedComponent,
+  onComponentSelect,
   onReorderComponents 
 }: SidebarPanelProps) {
   const componentTypes = [
@@ -84,7 +88,12 @@ export default function SidebarPanel({
                     key={component.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    onClick={() => onComponentSelect(component)}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedComponent?.id === component.id
+                        ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200'
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                    }`}
                   >
                     <div className={`p-1.5 rounded ${componentType?.color || 'bg-gray-100 text-gray-700'}`}>
                       <IconComponent size={14} />

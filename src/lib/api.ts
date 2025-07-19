@@ -132,31 +132,14 @@ export const projectsApi = {
     }
 
     try {
-      // Parse the website using our edge function
-      const parseResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sites-parse`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({ url: projectData.site_url })
-      });
-
-      if (!parseResponse.ok) {
-        const errorData = await parseResponse.json();
-        throw new Error(errorData.details || 'Failed to parse website');
-      }
-
-      const parsedData = await parseResponse.json();
-
-      // Create the project with parsed data
+      // Create the project first
       const { data, error } = await supabase
         .from('projects')
         .insert({
           user_id: user.user.id,
           site_url: projectData.site_url,
-          title: parsedData.title || projectData.title,
-          description: parsedData.description || projectData.description,
+          title: projectData.title,
+          description: projectData.description,
           is_published: false
         })
         .select()
@@ -166,33 +149,27 @@ export const projectsApi = {
         throw new Error(error.message);
       }
 
-      // Store the parsed components
-      if (parsedData.components && parsedData.components.length > 0) {
-        const components = parsedData.components.map((comp: any, index: number) => ({
-          project_id: data.id,
-          component_type: comp.type,
-          content: {
-            tag: comp.tag,
-            content: comp.content,
-            styles: comp.styles,
-            attributes: comp.attributes,
-            selector: comp.selector,
-            position: comp.position,
-            framework: parsedData.framework
-          },
-          position: index,
-          is_visible: true
-        }));
+      // Parse the website using our edge function
+      const parseResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-website`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({ 
+          url: projectData.site_url,
+          projectId: data.id
+        })
+      });
 
-        const { error: componentsError } = await supabase
-          .from('components')
-          .insert(components);
-
-        if (componentsError) {
-          console.error('Error creating components:', componentsError);
-          // Don't fail the project creation if components fail
-        }
+      if (!parseResponse.ok) {
+        console.error('Website parsing failed, but project created successfully');
+        // Don't fail project creation if parsing fails
+        return data;
       }
+
+      const parsedData = await parseResponse.json();
+      console.log('Website parsed successfully:', parsedData);
 
       return data;
     } catch (error: any) {

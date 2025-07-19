@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Save, Eye, ArrowLeft, Sparkles } from "lucide-react";
-import EditorCanvas from "../components/editor/EditorCanvas";
+import WebsitePreview from "../components/editor/WebsitePreview";
+import PropertiesPanel from "../components/editor/PropertiesPanel";
 import SidebarPanel from "../components/editor/SidebarPanel";
 import { projectsApi, componentsApi, aiApi } from "../lib/api";
 import { toast } from "sonner";
@@ -37,6 +38,8 @@ export default function Editor() {
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [components, setComponents] = useState<Component[]>([]);
+  const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
+  const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [gettingSuggestions, setGettingSuggestions] = useState(false);
@@ -317,14 +320,24 @@ export default function Editor() {
       </div>
 
       {/* Main Editor */}
-      <div className="flex pt-16 w-full">
+      <div className="flex pt-16 w-full h-screen">
         <SidebarPanel 
           onAddComponent={handleAddComponent}
           components={components}
+          selectedComponent={selectedComponent}
+          onComponentSelect={setSelectedComponent}
           onReorderComponents={handleReorderComponents}
         />
-        <EditorCanvas 
+        <WebsitePreview
+          siteUrl={project.site_url || ''}
           components={components}
+          selectedComponent={selectedComponent}
+          onComponentSelect={setSelectedComponent}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+        <PropertiesPanel
+          selectedComponent={selectedComponent}
           onUpdateComponent={handleUpdateComponent}
           onDeleteComponent={handleDeleteComponent}
         />
