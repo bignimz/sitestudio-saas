@@ -159,12 +159,19 @@ const createFallbackComponents = (url: string, projectId: string) => {
       component_type: 'header',
       content: {
         tag: 'header',
-        content: `${domain} Header`,
-        styles: { backgroundColor: '#ffffff', padding: '16px', borderBottom: '1px solid #e5e7eb' },
-        attributes: { class: 'header' },
+        content: `Navigation Header - Edit this text`,
+        styles: { 
+          backgroundColor: '#ffffff', 
+          padding: '16px', 
+          borderBottom: '1px solid #e5e7eb',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        },
+        attributes: { class: 'header navbar' },
         selector: 'header'
       },
-      position: 1,
+      position: 0,
       is_visible: true
     },
     {
@@ -172,10 +179,34 @@ const createFallbackComponents = (url: string, projectId: string) => {
       component_type: 'hero',
       content: {
         tag: 'section',
-        content: `Welcome to ${domain}`,
-        styles: { backgroundColor: '#f8fafc', padding: '64px 16px', textAlign: 'center' },
-        attributes: { class: 'hero' },
+        content: `Welcome to ${domain} - Hero Section`,
+        styles: { 
+          backgroundColor: '#3b82f6', 
+          color: '#ffffff',
+          padding: '80px 20px', 
+          textAlign: 'center',
+          fontSize: '48px',
+          fontWeight: 'bold'
+        },
+        attributes: { class: 'hero-section banner' },
         selector: '.hero'
+      },
+      position: 1,
+      is_visible: true
+    },
+    {
+      project_id: projectId,
+      component_type: 'navigation',
+      content: {
+        tag: 'nav',
+        content: `Home | About | Services | Contact`,
+        styles: { 
+          backgroundColor: '#f8fafc', 
+          padding: '12px 20px',
+          borderBottom: '1px solid #e5e7eb'
+        },
+        attributes: { class: 'navigation nav' },
+        selector: 'nav'
       },
       position: 2,
       is_visible: true
@@ -185,9 +216,15 @@ const createFallbackComponents = (url: string, projectId: string) => {
       component_type: 'paragraph',
       content: {
         tag: 'p',
-        content: `This is content from ${domain} that you can edit and customize.`,
-        styles: { fontSize: '16px', lineHeight: '1.6', margin: '16px 0' },
-        attributes: {},
+        content: `This is sample content from ${domain}. Click to edit this paragraph and customize the text, styling, and formatting to match your website's needs.`,
+        styles: { 
+          fontSize: '16px', 
+          lineHeight: '1.8', 
+          margin: '24px 0',
+          padding: '0 20px',
+          color: '#374151'
+        },
+        attributes: { class: 'content-paragraph' },
         selector: 'p'
       },
       position: 3,
@@ -195,15 +232,67 @@ const createFallbackComponents = (url: string, projectId: string) => {
     },
     {
       project_id: projectId,
+      component_type: 'button',
+      content: {
+        tag: 'button',
+        content: `Click Me - Call to Action`,
+        styles: { 
+          backgroundColor: '#10b981', 
+          color: '#ffffff', 
+          padding: '12px 24px',
+          border: 'none',
+          borderRadius: '6px',
+          fontSize: '16px',
+          fontWeight: '500',
+          cursor: 'pointer'
+        },
+        attributes: { class: 'cta-button btn' },
+        selector: 'button'
+      },
+      position: 4,
+      is_visible: true
+    },
+    {
+      project_id: projectId,
+      component_type: 'image',
+      content: {
+        tag: 'img',
+        content: `Image placeholder`,
+        styles: { 
+          width: '100%',
+          maxWidth: '600px',
+          height: 'auto',
+          borderRadius: '8px',
+          margin: '20px 0'
+        },
+        attributes: { 
+          class: 'content-image',
+          src: 'https://via.placeholder.com/600x400/3b82f6/ffffff?text=Sample+Image',
+          alt: 'Sample website image'
+        },
+        selector: 'img'
+      },
+      position: 5,
+      is_visible: true
+    },
+    {
+      project_id: projectId,
       component_type: 'footer',
       content: {
         tag: 'footer',
-        content: `© 2024 ${domain}. All rights reserved.`,
-        styles: { backgroundColor: '#1f2937', color: '#ffffff', padding: '32px 16px', textAlign: 'center' },
-        attributes: { class: 'footer' },
+        content: `© 2024 ${domain}. All rights reserved. | Privacy Policy | Terms of Service`,
+        styles: { 
+          backgroundColor: '#1f2937', 
+          color: '#9ca3af', 
+          padding: '40px 20px',
+          textAlign: 'center',
+          fontSize: '14px',
+          marginTop: '60px'
+        },
+        attributes: { class: 'footer site-footer' },
         selector: 'footer'
       },
-      position: 4,
+      position: 6,
       is_visible: true
     }
   ];
@@ -414,23 +503,41 @@ export const projectsApi = {
           }
         }
 
-        // If direct fetch fails, create components based on URL analysis
-        const components = html ? parseHtmlToComponents(html, data.id) : createFallbackComponents(projectData.site_url, data.id);
+        // Parse components or create fallback
+        let components: any[] = [];
+        
+        if (html && html.length > 100) {
+          console.log('Parsing HTML content, length:', html.length);
+          components = parseHtmlToComponents(html, data.id);
+          console.log('Parsed components from HTML:', components.length);
+        }
+        
+        // If no components found or no HTML, create fallback components
+        if (components.length === 0) {
+          console.log('No components parsed, creating fallback components');
+          components = createFallbackComponents(projectData.site_url, data.id);
+          console.log('Created fallback components:', components.length);
+        }
         
         // Detect framework from HTML or URL
         framework = html ? detectFrameworkFromHtml(html) : detectFrameworkFromUrl(projectData.site_url);
+        console.log('Detected framework:', framework);
 
-        // Insert parsed/fallback components
+        // Insert components (always create at least fallback ones)
         if (components.length > 0) {
+          console.log('Inserting components into database:', components);
           const { error: componentsError } = await supabase
             .from('components')
             .insert(components);
 
           if (componentsError) {
             console.error('Error creating components:', componentsError);
+            console.error('Components that failed to insert:', components);
           } else {
-            console.log(`Created ${components.length} components successfully`);
+            console.log(`✅ Created ${components.length} components successfully`);
           }
+        } else {
+          console.error('❌ No components to insert - this should not happen');
         }
 
         // Update project with framework detection
