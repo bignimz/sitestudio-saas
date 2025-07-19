@@ -21,7 +21,7 @@ enabled = true
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
+site_url = "http://localhost:5173"
 enable_signup = true
 
 [auth.email]
