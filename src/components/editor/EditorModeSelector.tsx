@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Code, Palette } from 'lucide-react';
+import { Code, Palette } from 'lucide-react';
 
 interface EditorModeSelectorProps {
   mode: 'visual' | 'code';
