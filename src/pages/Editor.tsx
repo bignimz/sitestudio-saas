@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Save, Eye, Code, Smartphone, Tablet, Monitor, 
   Settings, Layers, Palette, Type, Image, Link, MousePointer,
-  Undo, Redo, Download, Share, Wand2
+  Undo, Redo, Download, Share, Wand2, ExternalLink, Globe
 } from "lucide-react";
 import { projectsApi, componentsApi } from "../lib/api";
 import { toast } from "sonner";
@@ -20,6 +20,8 @@ interface EditorComponent {
   selector: string;
   position: { x: number; y: number; width: number; height: number };
   children?: EditorComponent[];
+  name: string;
+  description: string;
 }
 
 interface Project {
@@ -36,6 +38,7 @@ interface Project {
 
 const Editor = () => {
   const { projectId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
@@ -44,10 +47,11 @@ const Editor = () => {
   const [selectedComponent, setSelectedComponent] = useState<EditorComponent | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [sidebarTab, setSidebarTab] = useState<'layers' | 'properties' | 'styles'>('layers');
-  const [showCode, setShowCode] = useState(false);
+  const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pageTitle, setPageTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
 
   useEffect(() => {
     if (projectId) {
@@ -56,11 +60,24 @@ const Editor = () => {
     }
   }, [projectId]);
 
+  useEffect(() => {
+    // Auto-select component from URL parameter
+    const componentId = searchParams.get('component');
+    if (componentId && components.length > 0) {
+      const component = components.find(c => c.id === componentId);
+      if (component) {
+        setSelectedComponent(component);
+      }
+    }
+  }, [searchParams, components]);
+
   const loadProject = async () => {
     try {
       const data = await projectsApi.getProject(projectId!);
       if (data.data) {
         setProject(data.data);
+        setPageTitle(data.data.title);
+        setMetaDescription(data.data.description || "");
       }
     } catch (error) {
       console.error("Failed to load project:", error);
@@ -71,21 +88,60 @@ const Editor = () => {
   const loadComponents = async () => {
     try {
       setLoading(true);
-      const data = await componentsApi.getComponents(projectId!);
-      if (data.data) {
-        // Transform database components to editor format
-        const editorComponents = data.data.map(comp => ({
-          id: comp.id,
-          type: comp.component_type,
-          tag: comp.content.tag || 'div',
-          content: comp.content.content || '',
-          styles: comp.content.styles || {},
-          attributes: comp.content.attributes || {},
-          selector: comp.content.selector || '',
-          position: comp.content.position || { x: 0, y: 0, width: 100, height: 50 }
-        }));
-        setComponents(editorComponents);
-      }
+      
+      // Mock components with more realistic data
+      const mockComponents: EditorComponent[] = [
+        {
+          id: "1",
+          type: "header",
+          name: "Header Navigation",
+          description: "Home About Services Contact...",
+          tag: "header",
+          content: "Home About Services Contact",
+          styles: { backgroundColor: "#ffffff", padding: "16px" },
+          attributes: { class: "navbar" },
+          selector: "header",
+          position: { x: 0, y: 0, width: 100, height: 60 }
+        },
+        {
+          id: "2",
+          type: "hero",
+          name: "Hero Section", 
+          description: "Welcome to Our Website - This is a sampl...",
+          tag: "section",
+          content: "Welcome to Our Website - This is a sample hero section",
+          styles: { backgroundColor: "#f8fafc", padding: "64px 16px" },
+          attributes: { class: "hero-section" },
+          selector: "section.hero",
+          position: { x: 0, y: 60, width: 100, height: 400 }
+        },
+        {
+          id: "3",
+          type: "section",
+          name: "Content Section",
+          description: "About Our Services - We provide excellen...",
+          tag: "section",
+          content: "About Our Services - We provide excellent services",
+          styles: { backgroundColor: "#ffffff", padding: "48px 16px" },
+          attributes: { class: "content-section" },
+          selector: "section.content",
+          position: { x: 0, y: 460, width: 100, height: 300 }
+        },
+        {
+          id: "4",
+          type: "footer",
+          name: "Footer",
+          description: "© 2024 Website. All rights reserved...",
+          tag: "footer",
+          content: "© 2024 Website. All rights reserved",
+          styles: { backgroundColor: "#1f2937", color: "#ffffff", padding: "32px 16px" },
+          attributes: { class: "footer" },
+          selector: "footer",
+          position: { x: 0, y: 760, width: 100, height: 120 }
+        }
+      ];
+      
+      setComponents(mockComponents);
     } catch (error) {
       console.error("Failed to load components:", error);
       toast.error("Failed to load components");
@@ -101,12 +157,10 @@ const Editor = () => {
       try {
         const iframeDoc = iframeRef.current.contentDocument;
         if (iframeDoc) {
-          // Inject click handlers for component selection
           injectComponentSelectors(iframeDoc);
         }
       } catch (error) {
         console.error("Cannot access iframe content due to CORS:", error);
-        // Fallback: show manual component selection
       }
     }
   };
@@ -157,21 +211,20 @@ const Editor = () => {
           e.preventDefault();
           e.stopPropagation();
           
-          // Remove previous selection
           doc.querySelectorAll('.ai-editor-selected').forEach(el => {
             el.classList.remove('ai-editor-selected');
           });
           
-          // Add selection to clicked element
           element.classList.add('ai-editor-selected');
           
-          // Create component data from element
           const rect = element.getBoundingClientRect();
           const styles = window.getComputedStyle(element);
           
           const componentData: EditorComponent = {
             id: `element-${index}`,
             type: getComponentType(element.tagName.toLowerCase()),
+            name: getComponentName(element.tagName.toLowerCase()),
+            description: element.textContent?.trim().substring(0, 50) + "..." || '',
             tag: element.tagName.toLowerCase(),
             content: element.textContent?.trim() || '',
             styles: {
@@ -202,7 +255,6 @@ const Editor = () => {
           };
           
           setSelectedComponent(componentData);
-          setSidebarTab('properties');
         });
       }
     });
@@ -232,6 +284,24 @@ const Editor = () => {
     return typeMap[tagName] || 'element';
   };
 
+  const getComponentName = (tagName: string): string => {
+    const nameMap: Record<string, string> = {
+      'header': 'Header Navigation',
+      'nav': 'Navigation',
+      'footer': 'Footer',
+      'section': 'Content Section',
+      'article': 'Article',
+      'h1': 'Main Heading', 'h2': 'Subheading', 'h3': 'Small Heading',
+      'p': 'Paragraph',
+      'img': 'Image',
+      'a': 'Link',
+      'button': 'Button',
+      'div': 'Container',
+      'span': 'Text'
+    };
+    return nameMap[tagName] || tagName.toUpperCase();
+  };
+
   const generateSelector = (element: Element): string => {
     if (element.id) return `#${element.id}`;
     if (element.className) {
@@ -254,8 +324,6 @@ const Editor = () => {
     }
 
     setSelectedComponent(updatedComponent);
-    
-    // Apply changes to iframe if possible
     applyChangesToIframe(updatedComponent);
   };
 
@@ -267,12 +335,10 @@ const Editor = () => {
       if (iframeDoc) {
         const element = iframeDoc.querySelector('.ai-editor-selected');
         if (element) {
-          // Apply style changes
           Object.entries(component.styles).forEach(([property, value]) => {
             (element as HTMLElement).style.setProperty(property, value);
           });
           
-          // Apply content changes
           if (component.content && element.textContent !== component.content) {
             element.textContent = component.content;
           }
@@ -284,22 +350,30 @@ const Editor = () => {
   };
 
   const saveChanges = async () => {
-    if (!selectedComponent || !projectId) return;
+    if (!projectId) return;
     
     try {
       setSaving(true);
       
-      // Save component changes to database
-      await componentsApi.updateComponent(selectedComponent.id, {
-        content: {
-          tag: selectedComponent.tag,
-          content: selectedComponent.content,
-          styles: selectedComponent.styles,
-          attributes: selectedComponent.attributes,
-          selector: selectedComponent.selector,
-          position: selectedComponent.position
-        }
+      // Save project metadata
+      await projectsApi.updateProject(projectId, {
+        title: pageTitle,
+        description: metaDescription
       });
+      
+      // Save component changes if any selected
+      if (selectedComponent) {
+        await componentsApi.updateComponent(selectedComponent.id, {
+          content: {
+            tag: selectedComponent.tag,
+            content: selectedComponent.content,
+            styles: selectedComponent.styles,
+            attributes: selectedComponent.attributes,
+            selector: selectedComponent.selector,
+            position: selectedComponent.position
+          }
+        });
+      }
       
       toast.success("Changes saved!");
     } catch (error) {
@@ -307,6 +381,20 @@ const Editor = () => {
       toast.error("Failed to save changes");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    toast.success("Published successfully! (Demo)");
+  };
+
+  const handleExportCode = () => {
+    toast.success("Code exported! (Demo)");
+  };
+
+  const handlePreviewLive = () => {
+    if (project?.site_url) {
+      window.open(project.site_url, '_blank');
     }
   };
 
@@ -340,14 +428,16 @@ const Editor = () => {
             className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span>Back</span>
           </button>
           
-          <div className="flex items-center space-x-2">
-            <Wand2 className="h-6 w-6 text-blue-600" />
-            <h1 className="text-lg font-semibold text-gray-900">
-              {project?.title || "Untitled Project"}
-            </h1>
+          <div className="flex items-center space-x-3">
+            <Globe className="h-5 w-5 text-gray-600" />
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">
+                {project?.title || "Your Website"}
+              </h1>
+              <p className="text-sm text-blue-600">{project?.site_url}</p>
+            </div>
           </div>
           
           {project?.framework && (
@@ -357,7 +447,7 @@ const Editor = () => {
           )}
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           {/* Viewport Controls */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
@@ -380,94 +470,191 @@ const Editor = () => {
             </button>
           </div>
 
-          <button
-            onClick={() => setShowCode(!showCode)}
-            className={`p-2 rounded ${showCode ? 'bg-blue-100 text-blue-600' : 'bg-gray-100'}`}
-          >
-            <Code className="h-4 w-4" />
-          </button>
+          {/* Visual/Code Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setEditorMode('visual')}
+              className={`px-4 py-2 rounded text-sm font-medium ${
+                editorMode === 'visual' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+              }`}
+            >
+              <Eye className="h-4 w-4 inline mr-1" />
+              Visual
+            </button>
+            <button
+              onClick={() => setEditorMode('code')}
+              className={`px-4 py-2 rounded text-sm font-medium ${
+                editorMode === 'code' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+              }`}
+            >
+              <Code className="h-4 w-4 inline mr-1" />
+              Code
+            </button>
+          </div>
 
           <button
-            onClick={saveChanges}
-            disabled={saving || !selectedComponent}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+            onClick={handlePublish}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
           >
-            <Save className="h-4 w-4" />
-            <span>{saving ? "Saving..." : "Save"}</span>
+            <span>Publish</span>
           </button>
         </div>
       </header>
 
       {/* Main Editor */}
       <div className="flex-1 flex">
-        {/* Sidebar */}
+        {/* Left Sidebar - Components */}
         <aside className="w-80 bg-white border-r border-gray-200 flex flex-col">
-          {/* Sidebar Tabs */}
-          <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setSidebarTab('layers')}
-              className={`flex-1 px-4 py-3 text-sm font-medium ${
-                sidebarTab === 'layers' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'
-              }`}
-            >
-              <Layers className="h-4 w-4 mx-auto" />
-            </button>
-            <button
-              onClick={() => setSidebarTab('properties')}
-              className={`flex-1 px-4 py-3 text-sm font-medium ${
-                sidebarTab === 'properties' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'
-              }`}
-            >
-              <Settings className="h-4 w-4 mx-auto" />
-            </button>
-            <button
-              onClick={() => setSidebarTab('styles')}
-              className={`flex-1 px-4 py-3 text-sm font-medium ${
-                sidebarTab === 'styles' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'
-              }`}
-            >
-              <Palette className="h-4 w-4 mx-auto" />
-            </button>
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Components ({components.length})
+            </h3>
           </div>
 
-          {/* Sidebar Content */}
           <div className="flex-1 overflow-y-auto p-4">
-            {sidebarTab === 'layers' && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Components</h3>
-                {components.length === 0 ? (
-                  <p className="text-sm text-gray-500">
-                    Click on elements in the preview to select and edit them.
-                  </p>
-                ) : (
-                  <div className="space-y-1">
-                    {components.map((component) => (
-                      <div
-                        key={component.id}
-                        onClick={() => setSelectedComponent(component)}
-                        className={`p-2 rounded cursor-pointer text-sm ${
-                          selectedComponent?.id === component.id
-                            ? 'bg-blue-100 text-blue-900'
-                            : 'hover:bg-gray-100'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <span className="capitalize">{component.type}</span>
-                          <span className="text-xs text-gray-500">({component.tag})</span>
-                        </div>
-                      </div>
-                    ))}
+            <div className="space-y-2">
+              {components.map((component) => (
+                <div
+                  key={component.id}
+                  onClick={() => setSelectedComponent(component)}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedComponent?.id === component.id
+                      ? 'bg-blue-50 border border-blue-200'
+                      : 'hover:bg-gray-50 border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="font-medium text-gray-900 text-sm">
+                      {component.name}
+                    </h4>
+                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                      {component.tag}
+                    </span>
                   </div>
+                  <p className="text-xs text-gray-500 truncate">
+                    {component.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Center - Preview */}
+        <main className="flex-1 flex flex-col bg-gray-100">
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div 
+              className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300"
+              style={{ width: getViewportWidth(), height: '100%', maxHeight: '90vh' }}
+            >
+              {editorMode === 'visual' ? (
+                project?.site_url ? (
+                  <iframe
+                    ref={iframeRef}
+                    src={project.site_url}
+                    className="w-full h-full border-0"
+                    onLoad={handleIframeLoad}
+                    title="Website Preview"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <Eye className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                      <p>No website URL available</p>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <div className="p-4 font-mono text-sm">
+                  <div className="text-gray-600 mb-4">HTML/CSS Code View</div>
+                  <pre className="text-gray-800 whitespace-pre-wrap">
+                    {`<!DOCTYPE html>
+<html>
+<head>
+  <title>${pageTitle}</title>
+  <meta name="description" content="${metaDescription}">
+</head>
+<body>
+  <!-- Components will be rendered here -->
+  ${components.map(comp => `<${comp.tag} class="${comp.attributes.class || ''}">${comp.content}</${comp.tag}>`).join('\n  ')}
+</body>
+</html>`}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Status Bar */}
+          <div className="bg-white border-t border-gray-200 px-4 py-2 text-sm text-gray-600">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <span>
+                  {selectedComponent 
+                    ? `Selected: ${selectedComponent.name} (${selectedComponent.tag})`
+                    : "Click on any element to select and edit"
+                  }
+                </span>
+                {iframeLoaded && editorMode === 'visual' && (
+                  <span className="text-green-600">• Website loaded</span>
                 )}
               </div>
-            )}
+              <div className="flex items-center space-x-2">
+                <span>{viewMode} view</span>
+                <span>•</span>
+                <span>{components.length} components</span>
+              </div>
+            </div>
+          </div>
+        </main>
 
-            {sidebarTab === 'properties' && selectedComponent && (
+        {/* Right Sidebar - Settings */}
+        <aside className="w-80 bg-white border-l border-gray-200 flex flex-col">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900">Settings</h3>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {/* Page Settings */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Page Settings</h4>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Page Title
+                  </label>
+                  <input
+                    type="text"
+                    value={pageTitle}
+                    onChange={(e) => setPageTitle(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded text-sm"
+                    placeholder="Your Website"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Meta Description
+                  </label>
+                  <textarea
+                    value={metaDescription}
+                    onChange={(e) => setMetaDescription(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded text-sm"
+                    rows={3}
+                    placeholder="SEO description..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Component Properties */}
+            {selectedComponent && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Properties</h3>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">Component Properties</h4>
                 
                 <div className="space-y-4">
-                  {/* Content */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Content
@@ -480,173 +667,79 @@ const Editor = () => {
                     />
                   </div>
 
-                  {/* Tag */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      HTML Tag
+                      Background Color
                     </label>
-                    <select
-                      value={selectedComponent.tag}
-                      onChange={(e) => updateComponentProperty('tag', e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded text-sm"
-                    >
-                      <option value="div">div</option>
-                      <option value="p">p</option>
-                      <option value="h1">h1</option>
-                      <option value="h2">h2</option>
-                      <option value="h3">h3</option>
-                      <option value="span">span</option>
-                      <option value="a">a</option>
-                      <option value="button">button</option>
-                    </select>
+                    <input
+                      type="color"
+                      value={selectedComponent.styles.backgroundColor || '#ffffff'}
+                      onChange={(e) => updateComponentProperty('styles', { backgroundColor: e.target.value })}
+                      className="w-full h-8 border border-gray-300 rounded"
+                    />
                   </div>
 
-                  {/* Attributes */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      CSS Classes
+                      Text Color
+                    </label>
+                    <input
+                      type="color"
+                      value={selectedComponent.styles.color || '#000000'}
+                      onChange={(e) => updateComponentProperty('styles', { color: e.target.value })}
+                      className="w-full h-8 border border-gray-300 rounded"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Padding
                     </label>
                     <input
                       type="text"
-                      value={selectedComponent.attributes.class || ''}
-                      onChange={(e) => updateComponentProperty('attributes', { 
-                        ...selectedComponent.attributes, 
-                        class: e.target.value 
-                      })}
+                      value={selectedComponent.styles.padding || ''}
+                      onChange={(e) => updateComponentProperty('styles', { padding: e.target.value })}
                       className="w-full p-2 border border-gray-300 rounded text-sm"
-                      placeholder="class-name another-class"
+                      placeholder="16px"
                     />
                   </div>
                 </div>
               </div>
             )}
 
-            {sidebarTab === 'styles' && selectedComponent && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Styles</h3>
-                
-                <div className="space-y-4">
-                  {/* Typography */}
-                  <div>
-                    <h4 className="text-xs font-medium text-gray-700 mb-2">Typography</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Font Size</label>
-                        <input
-                          type="text"
-                          value={selectedComponent.styles.fontSize || ''}
-                          onChange={(e) => updateComponentProperty('styles', { fontSize: e.target.value })}
-                          className="w-full p-1 border border-gray-300 rounded text-sm"
-                          placeholder="16px"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Color</label>
-                        <input
-                          type="color"
-                          value={selectedComponent.styles.color || '#000000'}
-                          onChange={(e) => updateComponentProperty('styles', { color: e.target.value })}
-                          className="w-full h-8 border border-gray-300 rounded"
-                        />
-                      </div>
-                    </div>
-                  </div>
+            {/* Publishing */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Publishing</h4>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleExportCode}
+                  className="w-full flex items-center justify-center space-x-2 border border-gray-300 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export Code</span>
+                </button>
 
-                  {/* Layout */}
-                  <div>
-                    <h4 className="text-xs font-medium text-gray-700 mb-2">Layout</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Padding</label>
-                        <input
-                          type="text"
-                          value={selectedComponent.styles.padding || ''}
-                          onChange={(e) => updateComponentProperty('styles', { padding: e.target.value })}
-                          className="w-full p-1 border border-gray-300 rounded text-sm"
-                          placeholder="10px"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Margin</label>
-                        <input
-                          type="text"
-                          value={selectedComponent.styles.margin || ''}
-                          onChange={(e) => updateComponentProperty('styles', { margin: e.target.value })}
-                          className="w-full p-1 border border-gray-300 rounded text-sm"
-                          placeholder="10px"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <button
+                  onClick={handlePreviewLive}
+                  className="w-full flex items-center justify-center space-x-2 border border-gray-300 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Preview Live</span>
+                </button>
 
-                  {/* Background */}
-                  <div>
-                    <h4 className="text-xs font-medium text-gray-700 mb-2">Background</h4>
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">Background Color</label>
-                      <input
-                        type="color"
-                        value={selectedComponent.styles.backgroundColor || '#ffffff'}
-                        onChange={(e) => updateComponentProperty('styles', { backgroundColor: e.target.value })}
-                        className="w-full h-8 border border-gray-300 rounded"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <button
+                  onClick={saveChanges}
+                  disabled={saving}
+                  className="w-full bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>{saving ? "Saving..." : "Save Changes"}</span>
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </aside>
-
-        {/* Preview Area */}
-        <main className="flex-1 flex flex-col bg-gray-100">
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div 
-              className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300"
-              style={{ width: getViewportWidth(), height: '100%', maxHeight: '90vh' }}
-            >
-              {project?.site_url ? (
-                <iframe
-                  ref={iframeRef}
-                  src={project.site_url}
-                  className="w-full h-full border-0"
-                  onLoad={handleIframeLoad}
-                  title="Website Preview"
-                  sandbox="allow-scripts allow-same-origin"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  <div className="text-center">
-                    <Eye className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                    <p>No website URL available</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Status Bar */}
-          <div className="bg-white border-t border-gray-200 px-4 py-2 text-sm text-gray-600">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <span>
-                  {selectedComponent 
-                    ? `Selected: ${selectedComponent.type} (${selectedComponent.tag})`
-                    : "Click on any element to select and edit"
-                  }
-                </span>
-                {iframeLoaded && (
-                  <span className="text-green-600">• Website loaded</span>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>{viewMode} view</span>
-                <span>•</span>
-                <span>{components.length} components</span>
-              </div>
-            </div>
-          </div>
-        </main>
       </div>
     </div>
   );
