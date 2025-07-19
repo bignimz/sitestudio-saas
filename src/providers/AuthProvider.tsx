@@ -46,12 +46,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["subscription", state.user?.id],
     queryFn: async () => {
       if (!state.user?.id) return null;
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .select("status, plan_type")
-        .eq("user_id", state.user.id)
-        .single();
-      return error ? null : data;
+      
+      try {
+        const { data, error } = await supabase
+          .from("subscriptions")
+          .select("status, plan_type")
+          .eq("user_id", state.user.id)
+          .single();
+        
+        if (error) {
+          console.log("Subscriptions table not found, using default free plan");
+          // Return default free subscription if table doesn't exist
+          return { status: 'active', plan_type: 'free' };
+        }
+        
+        return data;
+      } catch (error) {
+        console.log("Error fetching subscription, using default free plan:", error);
+        // Return default free subscription on any error
+        return { status: 'active', plan_type: 'free' };
+      }
     },
     enabled: !!state.user?.id,
   });

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Globe, Edit, Trash2, ExternalLink, Wand2, Calendar, Clock, Settings, LogOut, User, Search, Filter } from "lucide-react";
+import { Plus, Globe, Edit, Trash2, ExternalLink, Wand2, Calendar, Clock, Settings, LogOut, User, Search, Filter, Database } from "lucide-react";
 import { projectsApi, authApi } from "../lib/api";
 import { toast } from "sonner";
+import { setupDatabase, checkDatabaseSetup } from "../utils/setupDatabase";
 
 // Temporary type definition
 interface Project {
@@ -26,12 +27,46 @@ const Dashboard = () => {
   const [creating, setCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<any>(null);
+  const [databaseStatus, setDatabaseStatus] = useState<'checking' | 'ready' | 'needs-setup'>('checking');
+  const [isSettingUpDb, setIsSettingUpDb] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadProjects();
     loadUser();
+    checkDatabase();
   }, []);
+
+  const checkDatabase = async () => {
+    try {
+      const status = await checkDatabaseSetup();
+      setDatabaseStatus(status.ready ? 'ready' : 'needs-setup');
+    } catch (error) {
+      console.error('Database check failed:', error);
+      setDatabaseStatus('needs-setup');
+    }
+  };
+
+  const handleSetupDatabase = async () => {
+    setIsSettingUpDb(true);
+    try {
+      const result = await setupDatabase();
+      if (result.success) {
+        toast.success('Database setup completed successfully!');
+        setDatabaseStatus('ready');
+        loadProjects(); // Reload projects after setup
+      } else if (result.needsManualSetup) {
+        toast.error('Database needs manual setup via Supabase dashboard');
+      } else {
+        toast.error('Database setup failed');
+      }
+    } catch (error) {
+      console.error('Database setup failed:', error);
+      toast.error('Database setup failed');
+    } finally {
+      setIsSettingUpDb(false);
+    }
+  };
 
   const loadUser = async () => {
     try {
@@ -161,6 +196,42 @@ const Dashboard = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Database Setup Banner */}
+        {databaseStatus === 'needs-setup' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Database className="h-6 w-6 text-yellow-600" />
+                <div>
+                  <h3 className="font-semibold text-yellow-800">Database Setup Required</h3>
+                  <p className="text-sm text-yellow-700">The database tables need to be created before you can use the application.</p>
+                </div>
+              </div>
+              <button
+                onClick={handleSetupDatabase}
+                disabled={isSettingUpDb}
+                className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+              >
+                {isSettingUpDb ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>Setting up...</span>
+                  </>
+                ) : (
+                  <>
+                    <Database className="h-4 w-4" />
+                    <span>Setup Database</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Welcome Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
