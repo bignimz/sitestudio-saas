@@ -50,7 +50,17 @@ export default function WebsitePreview({
 
     try {
       const iframeDoc = iframeRef.current.contentDocument;
-      if (!iframeDoc) return;
+      if (!iframeDoc) {
+        console.log('Cannot access iframe document - likely CORS restricted');
+        return;
+      }
+
+      // Check if we have same-origin access
+      const iframeWindow = iframeRef.current.contentWindow;
+      if (!iframeWindow) {
+        console.log('Cannot access iframe window - CORS restricted');
+        return;
+      }
 
       // Add editor styles
       const style = iframeDoc.createElement('style');
@@ -60,108 +70,145 @@ export default function WebsitePreview({
           outline-offset: 2px !important;
           cursor: pointer !important;
           position: relative !important;
+          transition: all 0.2s ease;
         }
         .ai-editor-highlight::after {
           content: attr(data-component-type);
           position: absolute;
-          top: -24px;
+          top: -28px;
           left: 0;
           background: #3b82f6;
           color: white;
-          padding: 2px 6px;
-          font-size: 12px;
-          border-radius: 3px;
+          padding: 4px 8px;
+          font-size: 11px;
+          border-radius: 4px;
           z-index: 10000;
           pointer-events: none;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-weight: 500;
+          white-space: nowrap;
         }
         .ai-editor-selected {
-          outline: 2px solid #10b981 !important;
+          outline: 3px solid #10b981 !important;
           outline-offset: 2px !important;
+          background-color: rgba(16, 185, 129, 0.1) !important;
+        }
+        .ai-editor-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 9999;
         }
       `;
       iframeDoc.head.appendChild(style);
 
-      // Add click handlers to all elements
-      const allElements = iframeDoc.querySelectorAll('*');
-      allElements.forEach((element, index) => {
-        if (['script', 'style', 'meta', 'link', 'title'].includes(element.tagName.toLowerCase())) {
-          return;
-        }
+      // Add click handlers to meaningful elements only
+      const meaningfulSelectors = [
+        'header', 'nav', 'main', 'section', 'article', 'aside', 'footer',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span', 'a', 'button',
+        'img', 'form', 'input', 'textarea', 'select', 'ul', 'ol', 'li'
+      ];
 
-        // Add hover effects
-        element.addEventListener('mouseenter', () => {
-          element.classList.add('ai-editor-highlight');
-          element.setAttribute('data-component-type', getComponentType(element.tagName.toLowerCase()));
-        });
-
-        element.addEventListener('mouseleave', () => {
-          element.classList.remove('ai-editor-highlight');
-        });
-
-        // Add click handler
-        element.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Remove previous selection
-          iframeDoc.querySelectorAll('.ai-editor-selected').forEach(el => {
-            el.classList.remove('ai-editor-selected');
-          });
-          
-          // Select current element
-          element.classList.add('ai-editor-selected');
-          
-          // Create component data from element
+      meaningfulSelectors.forEach(selector => {
+        const elements = iframeDoc.querySelectorAll(selector);
+        elements.forEach((element, index) => {
+          // Skip elements that are too small or hidden
           const rect = element.getBoundingClientRect();
-          const styles = window.getComputedStyle(element);
-          
-          const componentData = {
-            id: `element-${index}`,
-            project_id: '', // Will be set by parent
-            component_type: getComponentType(element.tagName.toLowerCase()),
-            content: {
-              tag: element.tagName.toLowerCase(),
-              content: element.textContent?.trim() || '',
-              styles: {
-                backgroundColor: styles.backgroundColor,
-                color: styles.color,
-                fontSize: styles.fontSize,
-                fontFamily: styles.fontFamily,
-                padding: styles.padding,
-                margin: styles.margin,
-                border: styles.border,
-                borderRadius: styles.borderRadius,
-                display: styles.display,
-                position: styles.position,
-                width: styles.width,
-                height: styles.height
+          if (rect.width < 20 || rect.height < 10) return;
+
+          const computedStyle = iframeWindow.getComputedStyle(element);
+          if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') return;
+
+          // Add hover effects
+          element.addEventListener('mouseenter', () => {
+            // Remove existing highlights
+            iframeDoc.querySelectorAll('.ai-editor-highlight').forEach(el => {
+              el.classList.remove('ai-editor-highlight');
+            });
+            
+            element.classList.add('ai-editor-highlight');
+            element.setAttribute('data-component-type', getComponentType(element.tagName.toLowerCase()));
+          });
+
+          element.addEventListener('mouseleave', () => {
+            element.classList.remove('ai-editor-highlight');
+          });
+
+          // Add click handler
+          element.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Remove previous selection
+            iframeDoc.querySelectorAll('.ai-editor-selected').forEach(el => {
+              el.classList.remove('ai-editor-selected');
+            });
+            
+            // Select current element
+            element.classList.add('ai-editor-selected');
+            
+            // Create component data from element
+            const elementRect = element.getBoundingClientRect();
+            const styles = iframeWindow.getComputedStyle(element);
+            
+            const componentData = {
+              id: `live-${selector}-${index}`,
+              project_id: '',
+              component_type: getComponentType(element.tagName.toLowerCase()),
+              content: {
+                tag: element.tagName.toLowerCase(),
+                content: element.textContent?.trim().substring(0, 200) || '',
+                styles: {
+                  backgroundColor: styles.backgroundColor,
+                  color: styles.color,
+                  fontSize: styles.fontSize,
+                  fontFamily: styles.fontFamily,
+                  padding: styles.padding,
+                  margin: styles.margin,
+                  border: styles.border,
+                  borderRadius: styles.borderRadius,
+                  display: styles.display,
+                  textAlign: styles.textAlign,
+                  fontWeight: styles.fontWeight,
+                  lineHeight: styles.lineHeight
+                },
+                attributes: Array.from(element.attributes).reduce((acc, attr) => {
+                  acc[attr.name] = attr.value;
+                  return acc;
+                }, {} as Record<string, any>),
+                selector: generateSelector(element),
+                position: {
+                  x: elementRect.left,
+                  y: elementRect.top,
+                  width: elementRect.width,
+                  height: elementRect.height
+                }
               },
-              attributes: Array.from(element.attributes).reduce((acc, attr) => {
-                acc[attr.name] = attr.value;
-                return acc;
-              }, {} as Record<string, any>),
-              selector: generateSelector(element),
-              position: {
-                x: rect.left,
-                y: rect.top,
-                width: rect.width,
-                height: rect.height
-              }
-            },
-            position: index,
-            styles: {},
-            is_visible: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-          
-          setSelectedElementInfo(componentData);
-          onComponentSelect(componentData);
+              position: index,
+              styles: {},
+              is_visible: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            
+            setSelectedElementInfo(componentData);
+            onComponentSelect(componentData);
+          });
         });
       });
 
+      console.log('Editor scripts injected successfully');
+
     } catch (error) {
-      console.error('Cannot access iframe content due to CORS:', error);
+      console.error('Cannot access iframe content due to CORS restrictions:', error);
+      // Show a message to the user about CORS limitations
+      setSelectedElementInfo({ 
+        corsError: true, 
+        message: 'Direct editing is not available due to browser security restrictions. You can still edit the detected components from the sidebar.' 
+      });
     }
   };
 
@@ -320,14 +367,28 @@ export default function WebsitePreview({
       <div className="bg-white border-t border-gray-200 px-4 py-2 text-sm text-gray-600">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <span>
-              {selectedComponent 
-                ? `Selected: ${selectedComponent.content?.tag || 'Element'} (${selectedComponent.component_type})`
-                : "Hover over elements to highlight, click to select and edit"
-              }
-            </span>
-            {iframeLoaded && (
-              <span className="text-green-600">• Website loaded</span>
+            {selectedElementInfo?.corsError ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-orange-600">⚠️ CORS Restricted</span>
+                <span className="text-xs text-gray-500">Use sidebar components for editing</span>
+              </div>
+            ) : selectedComponent ? (
+              <span>
+                Selected: {selectedComponent.content?.tag || 'Element'} ({selectedComponent.component_type})
+              </span>
+            ) : (
+              <span>
+                {iframeLoaded 
+                  ? "Hover over elements to highlight, click to select and edit"
+                  : "Loading website for interactive editing..."
+                }
+              </span>
+            )}
+            {iframeLoaded && !selectedElementInfo?.corsError && (
+              <span className="text-green-600">• Interactive editing enabled</span>
+            )}
+            {iframeLoaded && selectedElementInfo?.corsError && (
+              <span className="text-orange-600">• Limited by CORS policy</span>
             )}
           </div>
           <div className="flex items-center space-x-2">

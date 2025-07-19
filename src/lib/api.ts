@@ -81,6 +81,233 @@ const handleResponse = <T>(data: T | null, error: any): ApiResponse<T> => {
   return { data: data || undefined };
 };
 
+// Helper functions for website parsing
+const parseHtmlToComponents = (html: string, projectId: string) => {
+  const components: any[] = [];
+  let componentId = 1;
+
+  try {
+    // Create a temporary DOM element to parse HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    // Find common components
+    const componentSelectors = [
+      { selector: 'header, .header, #header', type: 'header', name: 'Header' },
+      { selector: 'nav, .nav, .navbar, .navigation', type: 'navigation', name: 'Navigation' },
+      { selector: '.hero, .hero-section, .banner', type: 'hero', name: 'Hero Section' },
+      { selector: 'main, .main, .content, .main-content', type: 'main-content', name: 'Main Content' },
+      { selector: 'footer, .footer, #footer', type: 'footer', name: 'Footer' },
+      { selector: 'h1', type: 'heading', name: 'Main Heading' },
+      { selector: 'h2, h3', type: 'heading', name: 'Subheading' },
+      { selector: 'p', type: 'paragraph', name: 'Paragraph' },
+      { selector: 'img', type: 'image', name: 'Image' },
+      { selector: 'a', type: 'link', name: 'Link' },
+      { selector: 'button, .btn', type: 'button', name: 'Button' },
+      { selector: 'section', type: 'section', name: 'Section' },
+      { selector: 'article', type: 'article', name: 'Article' },
+      { selector: 'aside, .sidebar', type: 'sidebar', name: 'Sidebar' },
+      { selector: 'form', type: 'form', name: 'Form' }
+    ];
+
+    componentSelectors.forEach(({ selector, type, name }) => {
+      const elements = doc.querySelectorAll(selector);
+      elements.forEach((element, index) => {
+        if (index < 3) { // Limit to first 3 of each type
+          const content = element.textContent?.trim().substring(0, 100) || '';
+          const attributes: Record<string, any> = {};
+          
+          // Extract attributes
+          for (const attr of element.attributes) {
+            attributes[attr.name] = attr.value;
+          }
+
+          components.push({
+            project_id: projectId,
+            component_type: type,
+            content: {
+              tag: element.tagName.toLowerCase(),
+              content,
+              styles: {
+                display: 'block',
+                margin: '0',
+                padding: '8px'
+              },
+              attributes,
+              selector: generateCSSSelector(element)
+            },
+            position: componentId++,
+            is_visible: true
+          });
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Error parsing HTML:', error);
+  }
+
+  return components.slice(0, 15); // Limit total components
+};
+
+const createFallbackComponents = (url: string, projectId: string) => {
+  const domain = new URL(url).hostname;
+  
+  return [
+    {
+      project_id: projectId,
+      component_type: 'header',
+      content: {
+        tag: 'header',
+        content: `${domain} Header`,
+        styles: { backgroundColor: '#ffffff', padding: '16px', borderBottom: '1px solid #e5e7eb' },
+        attributes: { class: 'header' },
+        selector: 'header'
+      },
+      position: 1,
+      is_visible: true
+    },
+    {
+      project_id: projectId,
+      component_type: 'hero',
+      content: {
+        tag: 'section',
+        content: `Welcome to ${domain}`,
+        styles: { backgroundColor: '#f8fafc', padding: '64px 16px', textAlign: 'center' },
+        attributes: { class: 'hero' },
+        selector: '.hero'
+      },
+      position: 2,
+      is_visible: true
+    },
+    {
+      project_id: projectId,
+      component_type: 'paragraph',
+      content: {
+        tag: 'p',
+        content: `This is content from ${domain} that you can edit and customize.`,
+        styles: { fontSize: '16px', lineHeight: '1.6', margin: '16px 0' },
+        attributes: {},
+        selector: 'p'
+      },
+      position: 3,
+      is_visible: true
+    },
+    {
+      project_id: projectId,
+      component_type: 'footer',
+      content: {
+        tag: 'footer',
+        content: `© 2024 ${domain}. All rights reserved.`,
+        styles: { backgroundColor: '#1f2937', color: '#ffffff', padding: '32px 16px', textAlign: 'center' },
+        attributes: { class: 'footer' },
+        selector: 'footer'
+      },
+      position: 4,
+      is_visible: true
+    }
+  ];
+};
+
+const detectFrameworkFromHtml = (html: string) => {
+  const indicators: string[] = [];
+  let framework = 'HTML/CSS/JS';
+  let confidence = 50;
+
+  // React detection
+  if (html.includes('react') || html.includes('React')) {
+    indicators.push('React references found');
+    confidence += 30;
+  }
+  if (html.includes('data-reactroot') || html.includes('id="root"')) {
+    indicators.push('React root element found');
+    confidence += 40;
+    framework = 'React';
+  }
+  if (html.includes('_next') || html.includes('__NEXT_DATA__')) {
+    indicators.push('Next.js markers found');
+    confidence += 60;
+    framework = 'Next.js';
+  }
+
+  // Vue detection
+  if (html.includes('vue') || html.includes('Vue')) {
+    indicators.push('Vue references found');
+    confidence += 30;
+  }
+  if (html.includes('v-if') || html.includes('v-for') || html.includes('v-model')) {
+    indicators.push('Vue directives found');
+    confidence += 50;
+    framework = 'Vue';
+  }
+
+  // Angular detection
+  if (html.includes('angular') || html.includes('ng-')) {
+    indicators.push('Angular markers found');
+    confidence += 50;
+    framework = 'Angular';
+  }
+
+  // WordPress detection
+  if (html.includes('wp-content') || html.includes('wordpress')) {
+    indicators.push('WordPress markers found');
+    confidence += 60;
+    framework = 'WordPress';
+  }
+
+  // Other frameworks
+  if (html.includes('bootstrap')) {
+    indicators.push('Bootstrap CSS framework');
+    confidence += 20;
+  }
+  if (html.includes('jquery') || html.includes('jQuery')) {
+    indicators.push('jQuery library found');
+    confidence += 20;
+  }
+
+  return {
+    framework,
+    confidence: Math.min(confidence, 100),
+    indicators
+  };
+};
+
+const detectFrameworkFromUrl = (url: string) => {
+  const domain = new URL(url).hostname;
+  let framework = 'HTML/CSS/JS';
+  let confidence = 30;
+  const indicators = ['URL-based detection'];
+
+  // Common patterns
+  if (domain.includes('github.io') || domain.includes('netlify') || domain.includes('vercel')) {
+    indicators.push('Static hosting detected');
+    confidence += 20;
+  }
+  
+  if (domain.includes('wordpress') || domain.includes('wp.com')) {
+    framework = 'WordPress';
+    confidence += 50;
+    indicators.push('WordPress hosting detected');
+  }
+
+  return { framework, confidence, indicators };
+};
+
+const generateCSSSelector = (element: Element): string => {
+  if (element.id) {
+    return `#${element.id}`;
+  }
+  
+  if (element.className) {
+    const classes = element.className.split(' ').filter(c => c.trim());
+    if (classes.length > 0) {
+      return `.${classes[0]}`;
+    }
+  }
+  
+  return element.tagName.toLowerCase();
+};
+
 // User API
 export const userApi = {
   async getProfile(): Promise<ApiResponse<User>> {
@@ -149,89 +376,71 @@ export const projectsApi = {
         throw new Error(error.message);
       }
 
-      // Create some mock components for demonstration
-      // In production, this would call the edge function to parse the actual website
+      // Parse the website using a client-side approach
       try {
-        const mockComponents = [
-          {
-            project_id: data.id,
-            component_type: 'header',
-            content: {
-              tag: 'header',
-              content: 'Website Header',
-              styles: { backgroundColor: '#ffffff', padding: '16px' },
-              attributes: { class: 'header' },
-              selector: 'header'
-            },
-            position: 0,
-            is_visible: true
-          },
-          {
-            project_id: data.id,
-            component_type: 'hero',
-            content: {
-              tag: 'section',
-              content: 'Hero Section - Welcome to the website',
-              styles: { backgroundColor: '#f8fafc', padding: '64px 16px', textAlign: 'center' },
-              attributes: { class: 'hero' },
-              selector: '.hero'
-            },
-            position: 1,
-            is_visible: true
-          },
-          {
-            project_id: data.id,
-            component_type: 'paragraph',
-            content: {
-              tag: 'p',
-              content: 'This is a sample paragraph from the website that you can edit.',
-              styles: { fontSize: '16px', lineHeight: '1.6', margin: '16px 0' },
-              attributes: {},
-              selector: 'p'
-            },
-            position: 2,
-            is_visible: true
-          },
-          {
-            project_id: data.id,
-            component_type: 'footer',
-            content: {
-              tag: 'footer',
-              content: '© 2024 Website. All rights reserved.',
-              styles: { backgroundColor: '#1f2937', color: '#ffffff', padding: '32px 16px', textAlign: 'center' },
-              attributes: { class: 'footer' },
-              selector: 'footer'
-            },
-            position: 3,
-            is_visible: true
+        console.log('Starting to parse website:', projectData.site_url);
+        
+        // Fetch the website HTML using a CORS proxy or direct fetch
+        let html = '';
+        let framework = { framework: 'HTML/CSS/JS', confidence: 50, indicators: ['Default detection'] };
+        
+        try {
+          // Try direct fetch first (will likely fail due to CORS)
+          const response = await fetch(projectData.site_url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; AI-Site-Editor/1.0)'
+            }
+          });
+          
+          if (response.ok) {
+            html = await response.text();
+            console.log('Direct fetch successful');
           }
-        ];
-
-        // Insert mock components
-        const { error: componentsError } = await supabase
-          .from('components')
-          .insert(mockComponents);
-
-        if (componentsError) {
-          console.error('Error creating mock components:', componentsError);
-        } else {
-          console.log('Mock components created successfully');
+        } catch (fetchError) {
+          console.log('Direct fetch failed due to CORS, trying alternative approach');
+          
+          // Try using a CORS proxy as fallback
+          try {
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(projectData.site_url)}`;
+            const proxyResponse = await fetch(proxyUrl);
+            
+            if (proxyResponse.ok) {
+              const proxyData = await proxyResponse.json();
+              html = proxyData.contents;
+              console.log('CORS proxy fetch successful');
+            }
+          } catch (proxyError) {
+            console.log('CORS proxy also failed, using URL-based detection');
+          }
         }
 
-        // Update project with mock framework detection
+        // If direct fetch fails, create components based on URL analysis
+        const components = html ? parseHtmlToComponents(html, data.id) : createFallbackComponents(projectData.site_url, data.id);
+        
+        // Detect framework from HTML or URL
+        framework = html ? detectFrameworkFromHtml(html) : detectFrameworkFromUrl(projectData.site_url);
+
+        // Insert parsed/fallback components
+        if (components.length > 0) {
+          const { error: componentsError } = await supabase
+            .from('components')
+            .insert(components);
+
+          if (componentsError) {
+            console.error('Error creating components:', componentsError);
+          } else {
+            console.log(`Created ${components.length} components successfully`);
+          }
+        }
+
+        // Update project with framework detection
         await supabase
           .from('projects')
-          .update({
-            framework: {
-              framework: 'HTML/CSS/JS',
-              confidence: 80,
-              indicators: ['Standard HTML elements detected']
-            }
-          })
+          .update({ framework })
           .eq('id', data.id);
 
       } catch (error) {
-        console.error('Error creating components:', error);
+        console.error('Error processing website:', error);
         // Continue without failing project creation
       }
 
