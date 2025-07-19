@@ -1,6 +1,8 @@
 import React from 'react';
 import { Code, Palette } from 'lucide-react';
 
+// Fixed JSX compilation issue - cache cleared
+
 interface EditorModeSelectorProps {
   mode: 'visual' | 'code';
   onModeChange: (mode: 'visual' | 'code') => void;
