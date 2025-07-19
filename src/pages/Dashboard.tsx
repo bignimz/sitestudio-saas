@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Plus, Globe, Edit, Trash2, ExternalLink } from "lucide-react";
 import { projectsApi, authApi } from "../lib/api";
-import { Project } from "../types/database";
+import { Project } from "../types";
 import { toast } from "sonner";
 
 const Dashboard = () => {

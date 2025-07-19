@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Plus, Type, Image, Layout, MousePointer, Navigation, Globe } from "lucide-react";
-import { Component } from "../../types/database";
+import { Component } from "../../types";
 
 interface SidebarPanelProps {
   onAddComponent: (type: string) => void;

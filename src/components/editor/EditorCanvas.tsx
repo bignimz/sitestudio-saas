@@ -1,7 +1,7 @@
 import React from "react";
 import { useDrop } from "react-dnd";
 import ComponentBlock from "./ComponentBlock";
-import { Component } from "../../types/database";
+import { Component } from "../../types";
 
 interface EditorCanvasProps {
   components: Component[];

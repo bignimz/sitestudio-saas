@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDrag } from "react-dnd";
 import { motion } from "framer-motion";
 import { Edit, Trash2, Eye, EyeOff } from "lucide-react";
-import { Component } from "../../types/database";
+import { Component } from "../../types";
 
 interface ComponentBlockProps {
   data: Component;

@@ -5,7 +5,7 @@ import { Save, Eye, ArrowLeft, Sparkles } from "lucide-react";
 import EditorCanvas from "../components/editor/EditorCanvas";
 import SidebarPanel from "../components/editor/SidebarPanel";
 import { projectsApi, componentsApi, aiApi } from "../lib/api";
-import { Component, Project } from "../types/database";
+import { Component, Project } from "../types";
 import { toast } from "sonner";
 
 export default function Editor() {

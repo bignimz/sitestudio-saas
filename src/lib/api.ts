@@ -8,7 +8,7 @@ import type {
   PaginatedResponse,
   ParsedSiteData,
   AISuggestionData
-} from '../types/database';
+} from '../types';
 
 // Helper function to handle API responses
 const handleResponse = <T>(data: T | null, error: any): ApiResponse<T> => {
